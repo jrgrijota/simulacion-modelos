@@ -3,10 +3,42 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Simulación Atómica: Dispersión de Thomson</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
+  <title>Simulación: Dispersión de Rutherford y Thomson</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
   
   <style>
+    :root {
+      --bg-body: #12141c;
+      --bg-container: #1a1d29;
+      --bg-card: #222638;
+      --bg-input: #0f111a;
+      --border-main: #2d324a;
+      --border-canvas: #3f476a;
+      --text-main: #e2e8f0;
+      --text-muted: #94a3b8;
+      --text-label: #cbd5e1;
+      --btn-primary: #2563eb;
+      --btn-primary-hover: #3b82f6;
+      --btn-secondary: #334155;
+      --btn-secondary-hover: #475569;
+    }
+
+    [data-theme="light"] {
+      --bg-body: #f1f5f9;
+      --bg-container: #ffffff;
+      --bg-card: #f8fafc;
+      --bg-input: #e2e8f0;
+      --border-main: #cbd5e1;
+      --border-canvas: #64748b;
+      --text-main: #0f172a;
+      --text-muted: #475569;
+      --text-label: #1e293b;
+      --btn-primary: #1d4ed8;
+      --btn-primary-hover: #2563eb;
+      --btn-secondary: #e2e8f0;
+      --btn-secondary-hover: #cbd5e1;
+    }
+
     *, *::before, *::after {
       box-sizing: border-box;
       margin: 0;
@@ -15,8 +47,8 @@
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background-color: #12141c;
-      color: #e2e8f0;
+      background-color: var(--bg-body);
+      color: var(--text-main);
       display: flex;
       justify-content: center;
       align-items: center;
@@ -24,6 +56,7 @@
       width: 100vw;
       overflow: hidden;
       padding: 16px;
+      transition: background-color 0.2s ease;
     }
 
     .simulation-container {
@@ -33,29 +66,11 @@
       width: 100%;
       max-width: 1280px;
       height: 720px;
-      background-color: #1a1d29;
-      border: 1px solid #2d324a;
+      background-color: var(--bg-container);
+      border: 1px solid var(--border-main);
       border-radius: 12px;
       padding: 16px;
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
-    }
-
-    .canvas-area {
-      position: relative;
-      width: 100%;
-      height: 100%;
-      background-color: #0b0c10;
-      border-radius: 8px;
-      border: 1px solid #25293d;
-      overflow: hidden;
-    }
-
-    #canvas-holder {
-      width: 100%;
-      height: 100%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
     }
 
     .control-panel {
@@ -67,17 +82,12 @@
       padding-right: 4px;
     }
 
-    .control-panel::-webkit-scrollbar {
-      width: 6px;
-    }
-    .control-panel::-webkit-scrollbar-thumb {
-      background: #2d324a;
-      border-radius: 3px;
-    }
+    .control-panel::-webkit-scrollbar { width: 4px; }
+    .control-panel::-webkit-scrollbar-thumb { background: var(--border-main); border-radius: 2px; }
 
     .control-card {
-      background-color: #222638;
-      border: 1px solid #2d324a;
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-main);
       border-radius: 8px;
       padding: 12px;
     }
@@ -87,106 +97,49 @@
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.08em;
-      color: #94a3b8;
+      color: var(--text-muted);
       margin-bottom: 10px;
-      border-left: 3px solid #00a0ff;
+      border-left: 3px solid #2563eb;
       padding-left: 6px;
     }
 
-    .control-group {
-      margin-bottom: 10px;
-    }
-    .control-group:last-child {
-      margin-bottom: 0;
-    }
+    .control-group { margin-bottom: 10px; }
+    label { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-label); margin-bottom: 4px; }
+    .data-readout { font-family: monospace; font-weight: bold; color: #2563eb; background-color: var(--bg-body); padding: 1px 6px; border-radius: 4px; font-size: 11px; }
 
-    label {
-      display: flex;
-      justify-content: space-between;
-      font-size: 12px;
-      color: #cbd5e1;
-      margin-bottom: 4px;
-    }
-
-    .data-readout {
-      font-family: monospace;
-      font-weight: bold;
-      color: #00a0ff;
-      background-color: #0f111a;
-      padding: 1px 6px;
-      border-radius: 4px;
-      font-size: 11px;
-    }
-
-    input[type="range"] {
-      -webkit-appearance: none;
+    input[type="range"], select {
       width: 100%;
-      height: 6px;
-      background: #0f111a;
-      border-radius: 3px;
-      outline: none;
-    }
-
-    input[type="range"]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      background: #00a0ff;
-      cursor: pointer;
-      border: 2px solid #222638;
-    }
-
-    select {
-      width: 100%;
-      background-color: #0f111a;
-      border: 1px solid #3b4261;
-      border-radius: 6px;
-      color: #f1f5f9;
+      background-color: var(--bg-input);
+      border: 1px solid var(--border-main);
+      color: var(--text-main);
       padding: 6px 10px;
       font-size: 13px;
-      outline: none;
-      cursor: pointer;
-    }
-
-    .btn-container {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-top: auto;
-    }
-
-    button {
-      background-color: #2563eb;
-      color: #ffffff;
-      border: none;
       border-radius: 6px;
-      padding: 10px;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.15s ease;
+      outline: none;
     }
 
-    button:hover { background-color: #3b82f6; }
-    button:disabled { background-color: #1e293b; color: #64748b; cursor: not-allowed; }
-    button.btn-secondary { background-color: #334155; }
-    button.btn-secondary:hover { background-color: #475569; }
+    input[type="range"] { -webkit-appearance: none; height: 6px; padding: 0; }
 
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 11px;
-      color: #94a3b8;
-      margin-bottom: 4px;
+    .canvas-area {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background-color: var(--bg-input);
+      border-radius: 8px;
+      border: 1px solid var(--border-canvas);
+      overflow: hidden;
     }
 
-    .legend-color {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-    }
+    #canvas-holder { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; }
+
+    .theme-dropdown-container { position: absolute; top: 14px; right: 14px; z-index: 100; }
+    .dropdown-trigger-btn { background-color: var(--bg-card); border: 1px solid var(--border-main); color: var(--text-main); padding: 8px 12px; font-size: 12px; font-weight: 600; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+    .dropdown-card { display: none; position: absolute; top: calc(100% + 6px); right: 0; width: 260px; background-color: var(--bg-card); border: 1px solid var(--border-main); border-radius: 8px; padding: 14px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3); }
+    .theme-dropdown-container.is-active .dropdown-card { display: block; }
+    .color-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 11px; }
+    .color-picker-input { width: 20px; height: 20px; border: none; cursor: pointer; background: none; }
+
+    .btn-container { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: auto; }
   </style>
 </head>
 <body>
@@ -194,13 +147,24 @@
   <div class="simulation-container">
     <div class="control-panel">
       <div class="control-card">
-        <h2>Configuración de Entorno</h2>
+        <h2>Paradigma Atómico</h2>
+        <div class="control-group">
+          <label>Modelo del Átomo</label>
+          <select id="ui-atom-model">
+            <option value="thomson">J.J. Thomson (Pudín de Pasas)</option>
+            <option value="rutherford">E. Rutherford (Modelo Nuclear)</option>
+          </select>
+        </div>
         <div class="control-group">
           <label>Vista de Laboratorio</label>
           <select id="ui-mode-select">
             <option value="atom">Átomo Individual</option>
             <option value="foil">Lámina Macroscópica</option>
           </select>
+        </div>
+        <div class="control-group" id="group-layers" style="display: none;">
+          <label>Espesor de la Lámina <span class="data-readout" id="layers-val">3</span></label>
+          <input type="range" id="ui-layers-slider" min="1" max="5" value="3">
         </div>
         <div class="control-group">
           <label>Número Atómico (Z) <span class="data-readout" id="z-val">14</span></label>
@@ -224,36 +188,42 @@
       </div>
 
       <div class="control-card">
-        <h2>Parámetros del Proyectil (α)</h2>
+        <h2>Parámetros del Proyectil</h2>
         <div class="control-group">
           <label>Velocidad Inicial <span class="data-readout" id="speed-val">10.0</span></label>
           <input type="range" id="ui-speed-slider" min="4" max="16" step="0.5" value="10">
         </div>
       </div>
 
-      <div class="control-card">
-        <h2>Instrumentación Visual</h2>
-        <div class="legend-item">
-          <div class="legend-color" style="background: rgba(255, 110, 0, 0.28); border: 1px solid rgba(255,130,0,0.6);"></div>
-          <span>Masa positiva continua (Thomson)</span>
-        </div>
-        <div class="legend-item">
-          <div class="legend-color" style="background: #00a0ff;"></div>
-          <span>Electrones discretos (1 px)</span>
-        </div>
-        <div class="legend-item">
-          <div class="legend-color" style="background: rgba(0, 160, 255, 0.12); border: 1px dashed rgba(0, 160, 255, 0.4); border-radius: 0;"></div>
-          <span>Zona reactiva (Clic a cualquier Y)</span>
-        </div>
-      </div>
-
       <div class="btn-container">
         <button id="ui-btn-shoot">Lanzar Proyectil</button>
-        <button id="ui-btn-reset" class="btn-secondary">Limpiar Trazas</button>
+        <button id="ui-btn-reset" class="btn-secondary">Limpiar</button>
       </div>
     </div>
 
     <div class="canvas-area">
+      <div class="theme-dropdown-container" id="ui-dropdown-container">
+        <button class="dropdown-trigger-btn" id="ui-dropdown-trigger">Apariencia</button>
+        <div class="dropdown-card">
+          <h3>Estilo de Interfaz</h3>
+          <div class="control-group">
+            <select id="ui-theme-select">
+              <option value="dark">Modo Oscuro</option>
+              <option value="light">Modo Claro</option>
+            </select>
+          </div>
+          <h3>Escala Gráfica</h3>
+          <div class="control-group">
+            <label>Radio electrones <span class="data-readout" id="electron-radius-val">2 px</span></label>
+            <input type="range" id="ui-radius-electron" min="1" max="10" value="2">
+          </div>
+          <h3>Paleta</h3>
+          <div class="color-row"><label>Partícula Alfa</label><input type="color" id="ui-color-alpha" class="color-picker-input" value="#00ff00"></div>
+          <div class="color-row"><label>Protones</label><input type="color" id="ui-color-proton" class="color-picker-input" value="#ff0000"></div>
+          <div class="color-row"><label>Neutrones</label><input type="color" id="ui-color-neutron" class="color-picker-input" value="#ffffff"></div>
+          <div class="color-row"><label>Electrones</label><input type="color" id="ui-color-electron" class="color-picker-input" value="#00a0ff"></div>
+        </div>
+      </div>
       <div id="canvas-holder"></div>
     </div>
   </div>

@@ -7,7 +7,10 @@ class AlphaParticle {
     this.history = [];                 
     this.dt = 1.0;                     
     this.isDead = false; 
-    this.particleColor = color(0, 255, 0);
+    
+    let colorInput = document.getElementById("ui-color-alpha");
+    this.baseColorHex = colorInput ? colorInput.value : "#00ff00";
+    this.particleColor = color(this.baseColorHex);
     this.deviationAngle = 0;
   }
 
@@ -26,9 +29,10 @@ class AlphaParticle {
     let heading = this.vel.heading(); 
     this.deviationAngle = abs(degrees(heading));
 
-    // Límite de calibración exacto a 20 grados para el color rojo
     let amt = constrain(this.deviationAngle / 20.0, 0, 1);
-    this.particleColor = lerpColor(color(0, 255, 0), color(255, 0, 0), amt);
+    let colorInput = document.getElementById("ui-color-alpha");
+    let baseColor = colorInput ? color(colorInput.value) : color(0, 255, 0);
+    this.particleColor = lerpColor(baseColor, color(255, 0, 0), amt);
 
     if (frameCount % 3 === 0) {
       this.history.push(this.pos.copy());
@@ -39,9 +43,9 @@ class AlphaParticle {
   display() {
     if (!this.isDead) {
       noFill();
-      let rastroColor = color(red(this.particleColor), green(this.particleColor), blue(this.particleColor), 60);
+      let rastroColor = color(red(this.particleColor), green(this.particleColor), blue(this.particleColor), 70);
       stroke(rastroColor);
-      strokeWeight(1.2);
+      strokeWeight(1.4);
       beginShape();
       for (let p of this.history) {
         vertex(p.x, p.y);
