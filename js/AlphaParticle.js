@@ -1,12 +1,11 @@
 class AlphaParticle {
-  constructor(x, y, speed, isFoilMode = false) {
+  constructor(x, y, vx, vy = 0) {
     this.pos = createVector(x, y);
-    this.vel = createVector(speed, 0); 
+    this.vel = createVector(vx, vy); 
     this.acc = createVector(0, 0);
     this.mass = 4.0;                   
     this.history = [];                 
     this.dt = 1.0;                     
-    this.isFoilMode = isFoilMode; 
     this.isDead = false; 
     this.particleColor = color(0, 255, 0);
     this.deviationAngle = 0;
@@ -27,18 +26,18 @@ class AlphaParticle {
     let heading = this.vel.heading(); 
     this.deviationAngle = abs(degrees(heading));
 
-    // RECALIBRACIÓN DEL GRADIENTE: Ajustado el límite a 10 grados para el rojo puro
-    let amt = constrain(this.deviationAngle / 10.0, 0, 1);
+    // Límite de calibración exacto a 20 grados para el color rojo
+    let amt = constrain(this.deviationAngle / 20.0, 0, 1);
     this.particleColor = lerpColor(color(0, 255, 0), color(255, 0, 0), amt);
 
-    if (!this.isFoilMode && frameCount % 3 === 0) {
+    if (frameCount % 3 === 0) {
       this.history.push(this.pos.copy());
       if (this.history.length > 35) this.history.shift(); 
     }
   }
 
   display() {
-    if (!this.isFoilMode && !this.isDead) {
+    if (!this.isDead) {
       noFill();
       let rastroColor = color(red(this.particleColor), green(this.particleColor), blue(this.particleColor), 60);
       stroke(rastroColor);
@@ -50,16 +49,8 @@ class AlphaParticle {
       endShape();
     }
 
-    if (this.isDead) {
-      fill(red(this.particleColor), green(this.particleColor), blue(this.particleColor), 200);
-      stroke(red(this.particleColor), green(this.particleColor), blue(this.particleColor));
-      strokeWeight(1);
-      ellipse(this.pos.x, this.pos.y, 7, 7);
-    } else {
-      fill(this.particleColor);
-      noStroke();
-      let size = this.isFoilMode ? 2.5 : 4.5;
-      ellipse(this.pos.x, this.pos.y, size, size);
-    }
+    fill(this.particleColor);
+    noStroke();
+    ellipse(this.pos.x, this.pos.y, 4.5, 4.5);
   }
 }

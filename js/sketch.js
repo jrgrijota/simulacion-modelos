@@ -2,79 +2,62 @@ let singleAtom;
 let foilAtoms = [];   
 let alphas = [];
 let deadImpacts = []; 
-let initialSpeed = 10.0; // Inercia incrementada para equilibrar la integración temporal del motor físico
 
-// Componentes del DOM
-let modeSelect;
-let triggerSelect; 
-let sliderRate;
-let sliderElectrons; 
-let lastZ = 14;      
-
-let currentMode = "atomic";
+let currentMode = "atom";
 let currentTrigger = "click"; 
+let canvasWidth = 870;
+let canvasHeight = 686;
+let detectorX = 810; 
+let spawnX = 25; // Coordenada horizontal de inicio visible y estable
 
 function setup() {
-  let canvas = createCanvas(900, 560);
-  canvas.parent("canvas-container");
+  let canvas = createCanvas(canvasWidth, canvasHeight);
+  canvas.parent("canvas-holder");
 
-  singleAtom = new ThomsonTarget(width / 2 - 20, height / 2 + 30, 95, 14, false);
-
-  let atomRadius = 9; 
-  let startX = width / 2 - 40; 
-  let numColumnas = 6;         
-  
-  for (let col = 0; col < numColumnas; col++) {
-    let x = startX + col * (atomRadius * 1.6); 
-    let yOffset = (col % 2 === 0) ? 0 : atomRadius; 
-    
-    for (let y = atomRadius + 80; y < height; y += atomRadius * 2) {
-      foilAtoms.push(new ThomsonTarget(x, y + yOffset, atomRadius, 4, true));
-    }
-  }
-
-  modeSelect = createSelect();
-  modeSelect.position(25, 65);
-  modeSelect.option("Vista Atómica Individual", "atomic");
-  modeSelect.option("Vista de Lámina (Mucho menos zoom)", "foil");
-  modeSelect.changed(onModeChange);
-
-  triggerSelect = createSelect();
-  triggerSelect.position(260, 65);
-  triggerSelect.option("Modo de Disparo: Clic Manual", "click");
-  triggerSelect.option("Modo de Disparo: Ráfaga Continua", "continuous");
-  triggerSelect.changed(onTriggerChange);
-
-  sliderRate = createSlider(1, 60, 20);
-  sliderRate.position(25, 120);
-
-  sliderElectrons = createSlider(1, 100, 14);
-  sliderElectrons.position(540, 120);
+  buildEnvironment();
+  setupUIEventListeners();
 }
 
 function draw() {
-  background(12);
+  background(11, 12, 16);
   
-  stroke(60);
-  strokeWeight(2);
-  line(820, 80, 820, height);
+  // RENDERIZADO DE LA FRANJA TÁCTIL (Solo en disparo manual por clic)
+  if (currentTrigger === "click") {
+    noStroke();
+    fill(0, 160, 255, 15); 
+    rect(0, 0, spawnX + 15, height);
+    
+    stroke(0, 160, 255, 45);
+    strokeWeight(1);
+    for (let y = 0; y < height; y += 10) {
+      line(spawnX + 15, y, spawnX + 15, y + 5);
+    }
+  }
+
+  // Placa de colisión derecha
+  stroke(40, 45, 65);
+  strokeWeight(3);
+  line(detectorX, 40, detectorX, height - 20);
   noStroke();
-  fill(80);
+  fill(94, 109, 133);
   textSize(10);
-  text("DETECTOR", 830, 95);
+  textAlign(CENTER);
+  text("DETECTOR", detectorX + 25, 30);
+  textAlign(LEFT);
 
-  if (currentMode === "atomic" && sliderElectrons.value() !== lastZ) {
-    lastZ = sliderElectrons.value();
-    singleAtom = new ThomsonTarget(width / 2 - 20, height / 2 + 30, 95, lastZ, false);
-    alphas = []; 
-    deadImpacts = [];
+  // MODO RÁFAGA AUTOMÁTICA: Alturas aleatorias en base a la frecuencia indicada
+  if (currentTrigger === "continuous") {
+    let rate = parseInt(document.getElementById("ui-rate-slider").value);
+    if (random(0, 1) < (rate / 60.0)) {
+      // Si es un átomo individual, acotamos la ráfaga al diámetro crítico. Si es lámina, ocupa todo el alto.
+      let spawnY = currentMode === "atom" ? random(height / 2 - 140, height / 2 + 140) : random(40, height - 40);
+      let v0 = parseFloat(document.getElementById("ui-speed-slider").value);
+      alphas.push(new AlphaParticle(spawnX, spawnY, v0, 0));
+    }
   }
 
-  if (currentMode === "foil" || (currentMode === "atomic" && currentTrigger === "continuous")) {
-    autoEmitParticles();
-  }
-
-  if (currentMode === "atomic") {
+  // Renderizado de blancos según la escala de laboratorio
+  if (currentMode === "atom") {
     singleAtom.display();
   } else {
     for (let target of foilAtoms) {
@@ -82,16 +65,18 @@ function draw() {
     }
   }
 
+  // Dibujo del registro histórico de impactos
   for (let imp of deadImpacts) {
     fill(red(imp.color), green(imp.color), blue(imp.color), 180);
-    ellipse(imp.x, imp.y, 6, 6);
+    ellipse(imp.x, imp.y, 5, 5);
   }
 
+  // Integración cinemática diferencial
   for (let i = alphas.length - 1; i >= 0; i--) {
     let a = alphas[i];
-    
     let fNeta = createVector(0, 0);
-    if (currentMode === "atomic") {
+
+    if (currentMode === "atom") {
       fNeta = singleAtom.calculateNetForce(a);
     } else {
       for (let target of foilAtoms) {
@@ -103,107 +88,101 @@ function draw() {
     a.update();
     a.display();
 
-    if (!a.isDead && a.pos.x >= 820) {
+    // Captura e inactivación en el detector
+    if (!a.isDead && a.pos.x >= detectorX) {
       a.isDead = true;
-      a.pos.x = 820; 
-      deadImpacts.push({
-        x: a.pos.x,
-        y: a.pos.y,
-        color: a.particleColor
-      });
+      a.pos.x = detectorX; 
+      deadImpacts.push({ x: a.pos.x, y: a.pos.y, color: a.particleColor });
       
-      if (deadImpacts.length > 40) deadImpacts.shift();
-      
+      if (deadImpacts.length > 40) deadImpacts.shift(); // Borrado rápido a la derecha
       alphas.splice(i, 1);
       continue;
     }
 
-    if (a.pos.y < 80 || a.pos.y > height + 20 || a.pos.x < -20) {
+    // Recolector de fugas periféricas
+    if (a.pos.y < -10 || a.pos.y > height + 10 || a.pos.x < -10) {
       alphas.splice(i, 1);
     }
   }
-
-  drawUI();
 }
 
-function autoEmitParticles() {
-  let rate = sliderRate.value(); 
-  let probability = rate / 60.0;
-  
-  if (random(0, 1) < probability) {
-    let spawnY = random(95, height - 20);
-    if (currentMode === "atomic") {
-      alphas.push(new AlphaParticle(0, spawnY, initialSpeed, false));
-    } else {
-      alphas.push(new AlphaParticle(0, spawnY, initialSpeed, true));
-    }
-  }
-}
-
-function onModeChange() {
-  currentMode = modeSelect.value();
-  alphas = []; 
-  deadImpacts = []; 
-  
-  if (currentMode === "foil") {
-    triggerSelect.hide(); 
-    sliderElectrons.hide(); 
-  } else {
-    triggerSelect.show();
-    sliderElectrons.show();
-  }
-}
-
-function onTriggerChange() {
-  currentTrigger = triggerSelect.value();
-  alphas = [];
-  deadImpacts = [];
-}
-
+// CAPTURA DE INTERACCIÓN POR CLIC DIRECTO: Altura exacta Y del ratón
 function mousePressed() {
-  if (mouseY < 160) return;
-
-  if (currentMode === "atomic" && currentTrigger === "click" && mouseX < 200) {
-    alphas.push(new AlphaParticle(0, mouseY, initialSpeed, false));
+  if (currentTrigger === "click" && mouseX >= 0 && mouseX <= spawnX + 15 && mouseY >= 0 && mouseY <= height) {
+    let v0 = parseFloat(document.getElementById("ui-speed-slider").value);
+    alphas.push(new AlphaParticle(spawnX, mouseY, v0, 0));
   }
 }
 
-function drawUI() {
-  fill(20);
-  rect(0, 0, width, 155);
+function buildEnvironment() {
+  let z = parseInt(document.getElementById("ui-z-slider").value);
+  singleAtom = new ThomsonTarget(width / 2 + 40, height / 2, 190, z, false);
 
-  fill(240);
-  noStroke();
-  textSize(14);
-  text("Simulador Físico: Experimento de Rutherford vs Hipótesis de Thomson", 25, 35);
+  foilAtoms = [];
+  let atomRadius = 14; 
+  let startX = width / 2 - 40; 
+  let numColumnas = 6;         
   
-  fill(180);
-  textSize(11);
-  text("Frecuencia de ráfaga (Partículas/seg): " + sliderRate.value(), 165, 133);
-  
-  if (currentMode === "atomic") {
-    text("Número de electrones (Carga Z): " + sliderElectrons.value(), 680, 133);
-  }
-
-  text("Gradiente de desviación:", 540, 35);
-  fill(0, 255, 0); rect(680, 24, 12, 12); fill(160); text("0º (Sin deflexión)", 700, 34);
-  fill(255, 0, 0); rect(800, 24, 12, 12); fill(160); text("≥20º (Desviación notable)", 820, 34);
-
-  stroke(40);
-  line(0, 155, width, 155);
-  noStroke();
-
-  fill(200);
-  if (currentMode === "atomic") {
-    if (currentTrigger === "click") {
-      text("Modo: Átomo aislado. Disparo por Clic Manual habilitado.", 25, 175);
-      text("Haz clic abajo a la izquierda (X < 200) para lanzar y analizar el rastro.", 25, 192);
-    } else {
-      text("Modo: Átomo aislado. Disparo por Flujo Continuo habilitado.", 25, 175);
-      text("Mueve el deslizador derecho para observar cómo se autoorganizan los electrones en capas concéntricas.", 25, 192);
+  for (let col = 0; col < numColumnas; col++) {
+    let x = startX + col * (atomRadius * 1.6); 
+    let yOffset = (col % 2 === 0) ? 0 : atomRadius; 
+    for (let y = atomRadius + 40; y < height - 20; y += atomRadius * 2) {
+      foilAtoms.push(new ThomsonTarget(x, y + yOffset, atomRadius, z, true));
     }
-  } else {
-    text("Modo: Lámina de Oro con bajo zoom (6 capas sucesivas de átomos densos).", 25, 175);
-    text("Observa el camino largo: el flujo continuo impacta en el detector sin encender luces rojas.", 25, 192);
   }
+}
+
+function setupUIEventListeners() {
+  document.getElementById("ui-mode-select").addEventListener("change", (e) => {
+    currentMode = e.target.value;
+    alphas = [];
+    deadImpacts = [];
+    buildEnvironment();
+  });
+
+  document.getElementById("ui-trigger-select").addEventListener("change", (e) => {
+    currentTrigger = e.target.value;
+    let groupRate = document.getElementById("group-rate");
+    let shootBtn = document.getElementById("ui-btn-shoot");
+    
+    if (currentTrigger === "continuous") {
+      groupRate.style.opacity = "1.0";
+      groupRate.style.pointerEvents = "auto";
+      shootBtn.disabled = true; 
+      shootBtn.style.opacity = 0.4;
+    } else {
+      groupRate.style.opacity = "0.3";
+      groupRate.style.pointerEvents = "none";
+      shootBtn.disabled = false; 
+      shootBtn.style.opacity = 1.0;
+    }
+    alphas = [];
+    deadImpacts = [];
+  });
+
+  document.getElementById("ui-z-slider").addEventListener("input", (e) => {
+    document.getElementById("z-val").innerText = e.target.value;
+    buildEnvironment();
+  });
+
+  document.getElementById("ui-rate-slider").addEventListener("input", (e) => {
+    document.getElementById("rate-val").innerText = e.target.value;
+  });
+
+  document.getElementById("ui-speed-slider").addEventListener("input", (e) => {
+    document.getElementById("speed-val").innerText = parseFloat(e.target.value).toFixed(1);
+  });
+
+  // El botón físico del panel efectúa un lanzamiento por la línea central (b=0) como alternativa táctil
+  document.getElementById("ui-btn-shoot").addEventListener("click", () => {
+    if (currentTrigger === "click") {
+      let v0 = parseFloat(document.getElementById("ui-speed-slider").value);
+      alphas.push(new AlphaParticle(spawnX, height / 2, v0, 0));
+    }
+  });
+
+  document.getElementById("ui-btn-reset").addEventListener("click", () => {
+    alphas = [];
+    deadImpacts = [];
+  });
 }
