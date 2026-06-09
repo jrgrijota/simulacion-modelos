@@ -34,50 +34,20 @@ function draw() {
   let tInput = document.getElementById("ui-theme-select");
   let themeMode = tInput ? tInput.value : "dark";
   
-  if (themeMode === "light") {
-    background(248, 250, 252); 
-  } else {
-    background(11, 12, 16);    
-  }
+  background(themeMode === "light" ? [248, 250, 252] : [11, 12, 16]);
   
   if (currentTrigger === "click") {
     noStroke();
     fill(0, 160, 255, themeMode === "light" ? 14 : 20); 
     rect(0, 0, spawnX + 15, height);
-    
     stroke(0, 160, 255, themeMode === "light" ? 40 : 55);
     strokeWeight(1);
-    for (let y = 0; y < height; y += 10) {
-      line(spawnX + 15, y, spawnX + 15, y + 5);
-    }
-    
-    push();
-    translate(spawnX - 6, height / 2);
-    rotate(-HALF_PI);
-    noStroke();
-    fill(0, 160, 255, themeMode === "light" ? 140 : 180);
-    textSize(10);
-    textAlign(CENTER);
-    text("ZONA DE DISPARO (CLIC)", 0, 0);
-    pop();
+    for (let y = 0; y < height; y += 10) line(spawnX + 15, y, spawnX + 15, y + 5);
   }
 
-  // Detector Fijo
   stroke(themeMode === "light" ? color(203, 213, 225) : color(30, 41, 59));
   strokeWeight(4);
   line(detectorX, 0, detectorX, height);
-  
-  push();
-  translate(detectorX - 15, height / 2);
-  rotate(-HALF_PI);
-  noStroke();
-  fill(themeMode === "light" ? color(148, 163, 184) : color(51, 65, 85));
-  textSize(24);
-  textFont('monospace');
-  textStyle(BOLD);
-  textAlign(CENTER);
-  text("DETECTOR", 0, 0);
-  pop();
 
   if (currentTrigger === "continuous" && isContinuousPlaying) {
     let rSlider = document.getElementById("ui-rate-slider");
@@ -92,9 +62,13 @@ function draw() {
   }
 
   if (currentMode === "atom") {
-    if (singleAtom) singleAtom.display();
+    if (singleAtom) {
+      singleAtom.updateElectrons();
+      singleAtom.display();
+    }
   } else {
     for (let target of foilAtoms) {
+      target.updateElectrons();
       target.display();
     }
   }
@@ -106,19 +80,27 @@ function draw() {
 
   for (let i = alphas.length - 1; i >= 0; i--) {
     let a = alphas[i];
-    let fNeta = createVector(0, 0);
+    let targetAtom = null;
 
     if (currentMode === "atom") {
-      if (singleAtom) fNeta = singleAtom.calculateNetForce(a);
+      targetAtom = singleAtom;
     } else {
+      let minDist = Infinity;
+      let candidates = [];
+      
       for (let target of foilAtoms) {
-        let fNet = target.calculateNetForce(a);
-        fNeta.add(fNet);
+        let d = p5.Vector.dist(a.pos, target.pos);
+        if (d < minDist) {
+          minDist = d;
+          candidates = [target];
+        } else if (abs(d - minDist) < 0.001) {
+          candidates.push(target);
+        }
       }
+      if (candidates.length === 1) targetAtom = candidates[0];
     }
 
-    a.applyForce(fNeta);
-    a.update();
+    a.integrate(1.0, targetAtom);
     a.display();
 
     if (!a.isDead && a.pos.x >= detectorX) {
@@ -129,16 +111,11 @@ function draw() {
       if (!a.hasBeenCounted) {
         a.hasBeenCounted = true;
         let finalAngle = a.deviationAngle; 
-        if (finalAngle < 1.0) {
-          statStraight++;
-        } else if (finalAngle >= 1.0 && finalAngle <= 90.0) {
-          statDeviated++;
-        } else {
-          statRebound++;
-        }
+        if (finalAngle < 1.0) statStraight++;
+        else if (finalAngle >= 1.0 && finalAngle <= 90.0) statDeviated++;
+        else statRebound++;
         updateTelemetryUI();
       }
-      
       if (deadImpacts.length > 40) deadImpacts.shift(); 
       alphas.splice(i, 1);
       continue;
@@ -161,7 +138,6 @@ function mousePressed() {
       hasClickedInManualMode = true;
       updateManualHintVisibility();
     }
-
     let sSlider = document.getElementById("ui-speed-slider");
     let v0 = sSlider ? parseFloat(sSlider.value) : 10.0;
     alphas.push(new AlphaParticle(spawnX, mouseY, v0, 0));
@@ -173,15 +149,13 @@ function mousePressed() {
 function buildEnvironment() {
   let zSlider = document.getElementById("ui-z-slider");
   let z = zSlider ? parseInt(zSlider.value) : 14;
-  
   singleAtom = new ThomsonTarget(width / 2, height / 2, 190, z, false, currentModel);
-
   foilAtoms = [];
+  
   let atomRadius = 14; 
   let atomDiameter = atomRadius * 2; 
   let lSlider = document.getElementById("ui-layers-slider");
   let numColumnas = lSlider ? parseInt(lSlider.value) : 3;
-  
   let totalFoilWidth = (numColumnas - 1) * atomDiameter;
   let startX = (width / 2) - (totalFoilWidth / 2) - 40; 
   
@@ -198,7 +172,6 @@ function updateTelemetryUI() {
   let sElem = document.getElementById("stat-straight");
   let dElem = document.getElementById("stat-deviated");
   let rElem = document.getElementById("stat-rebound");
-
   if(tElem) tElem.innerText = statTotal;
   if (statTotal > 0) {
     if(sElem) sElem.innerText = ((statStraight / statTotal) * 100).toFixed(1) + "%";
@@ -212,10 +185,7 @@ function updateTelemetryUI() {
 }
 
 function resetTelemetry() {
-  statTotal = 0;
-  statStraight = 0;
-  statDeviated = 0;
-  statRebound = 0;
+  statTotal = 0; statStraight = 0; statDeviated = 0; statRebound = 0;
   updateTelemetryUI();
 }
 
@@ -232,20 +202,17 @@ function setupUIEventListeners() {
     currentModel = e.target.value;
     alphas = []; deadImpacts = []; resetTelemetry(); buildEnvironment();
   });
-
   document.getElementById("ui-mode-select").addEventListener("change", (e) => {
     currentMode = e.target.value;
     let groupLayers = document.getElementById("group-layers");
     if (groupLayers) groupLayers.style.display = currentMode === "foil" ? "block" : "none";
     alphas = []; deadImpacts = []; resetTelemetry(); buildEnvironment();
   });
-
   document.getElementById("ui-trigger-select").addEventListener("change", (e) => {
     currentTrigger = e.target.value;
     let groupRate = document.getElementById("group-rate");
     let groupEnergy = document.getElementById("group-energy");
     let playPauseBtn = document.getElementById("ui-btn-playpause");
-    
     if (currentTrigger === "click") {
       hasClickedInManualMode = false;
       if (groupRate) groupRate.style.display = "none"; 
@@ -256,55 +223,36 @@ function setupUIEventListeners() {
       if (groupEnergy) groupEnergy.style.gridColumn = "span 1"; 
       if (playPauseBtn) playPauseBtn.disabled = false;
     }
-    
-    let btnText = playPauseBtn.querySelector("span");
-    let btnIcon = playPauseBtn.querySelector("svg");
-    if(btnText) btnText.innerText = "Play";
-    if(btnIcon) btnIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
+    let playSpan = playPauseBtn.querySelector("span");
+    if(playSpan) playSpan.innerText = "Play";
     playPauseBtn.className = "is-paused";
-
     updateManualHintVisibility();
     alphas = []; deadImpacts = []; resetTelemetry();
   });
-
   let playPauseBtn = document.getElementById("ui-btn-playpause");
   playPauseBtn.addEventListener("click", () => {
     isContinuousPlaying = !isContinuousPlaying;
     let btnText = playPauseBtn.querySelector("span");
-    let btnIcon = playPauseBtn.querySelector("svg");
-    if (isContinuousPlaying) {
-      if(btnText) btnText.innerText = "Pausa";
-      if(btnIcon) btnIcon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
-      playPauseBtn.className = "";
-    } else {
-      if(btnText) btnText.innerText = "Play";
-      if(btnIcon) btnIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
-      playPauseBtn.className = "is-paused";
-    }
+    if (btnText) btnText.innerText = isContinuousPlaying ? "Pausa" : "Play";
+    playPauseBtn.className = isContinuousPlaying ? "" : "is-paused";
   });
-
   document.getElementById("ui-layers-slider").addEventListener("input", (e) => {
     document.getElementById("layers-val").innerText = e.target.value;
     resetTelemetry(); buildEnvironment();
   });
-
   document.getElementById("ui-z-slider").addEventListener("input", (e) => {
     document.getElementById("z-val").innerText = e.target.value;
     resetTelemetry(); buildEnvironment();
   });
-
   document.getElementById("ui-rate-slider").addEventListener("input", (e) => {
     document.getElementById("rate-val").innerText = e.target.value;
   });
-
   document.getElementById("ui-speed-slider").addEventListener("input", (e) => {
     document.getElementById("speed-val").innerText = parseFloat(e.target.value).toFixed(1);
   });
-
   document.getElementById("ui-btn-reset").addEventListener("click", () => {
     alphas = []; deadImpacts = []; resetTelemetry();
   });
-
   let statsCard = document.getElementById("ui-panel-stats");
   document.getElementById("ui-stats-trigger").addEventListener("click", () => {
     statsCard.classList.toggle("is-expanded");
@@ -314,17 +262,13 @@ function setupUIEventListeners() {
 function setupAppearanceEventListeners() {
   let trigger = document.getElementById("ui-dropdown-trigger");
   let container = document.getElementById("ui-dropdown-container");
-  
   if (trigger && container) {
     trigger.addEventListener("click", (e) => { e.stopPropagation(); container.classList.toggle("is-active"); });
     document.addEventListener("click", () => { container.classList.remove("is-active"); });
-    container.addEventListener("click", (e) => { e.stopPropagation(); });
   }
-
   document.getElementById("ui-theme-select").addEventListener("change", (e) => {
     document.documentElement.setAttribute("data-theme", e.target.value);
   });
-
   document.getElementById("ui-radius-electron").addEventListener("input", (e) => {
     document.getElementById("electron-radius-val").innerText = e.target.value + " px";
   });

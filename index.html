@@ -74,31 +74,20 @@
       box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
     }
 
-    /* CORRECCIÓN CRÍTICA: Confinamiento estricto de altura máxima y desborde */
     .control-panel {
       display: flex;
       flex-direction: column;
       gap: 10px;
       height: 100%;
-      max-height: 100%; /* Fuerza al contenedor a no estirarse infinitamente */
-      overflow-y: auto;  /* Activa la barra lateral cuando hay desborde real */
+      max-height: 100%;
+      overflow-y: auto;
       padding-right: 6px;
     }
 
-    /* Estilizado aséptico de la barra de desplazamiento */
-    .control-panel::-webkit-scrollbar { 
-      width: 6px; 
-    }
-    .control-panel::-webkit-scrollbar-thumb { 
-      background: var(--border-main); 
-      border-radius: 4px; 
-    }
-    .control-panel::-webkit-scrollbar-thumb:hover {
-      background: var(--border-canvas);
-    }
-    .control-panel::-webkit-scrollbar-track { 
-      background: transparent; 
-    }
+    .control-panel::-webkit-scrollbar { width: 6px; }
+    .control-panel::-webkit-scrollbar-thumb { background: var(--border-main); border-radius: 4px; }
+    .control-panel::-webkit-scrollbar-thumb:hover { background: var(--border-canvas); }
+    .control-panel::-webkit-scrollbar-track { background: transparent; }
 
     .control-card {
       background-color: var(--bg-card);
@@ -124,10 +113,9 @@
       gap: 10px;
     }
 
-    /* Proporciones asimétricas ajustadas para visualización en una línea */
     .grid-asymmetric {
       display: grid;
-      grid-template-columns: 0.85fr 1.15fr;
+      grid-template-columns: 0.82fr 1.18fr;
       gap: 10px;
     }
 
@@ -168,22 +156,10 @@
     input[type="range"] { height: 6px; padding: 0; }
     input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 11px; height: 11px; border-radius: 50%; background: #2563eb; cursor: pointer; }
 
-    .trigger-inline-buttons {
-      margin-top: 10px;
-    }
+    .trigger-inline-buttons { margin-top: 10px; }
     .trigger-inline-buttons button {
-      width: 100%;
-      padding: 8px;
-      font-size: 12.5px;
-      font-weight: 600;
-      border-radius: 6px;
-      border: none;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      transition: background-color 0.15s ease;
+      width: 100%; padding: 8px; font-size: 12.5px; font-weight: 600; border-radius: 6px; border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 6px; transition: background-color 0.15s ease;
     }
 
     #ui-btn-playpause { background-color: #10b981; color: white; }
@@ -195,29 +171,11 @@
     .btn-card-reset { background-color: var(--btn-secondary); color: var(--text-main); width: 100%; padding: 10px; font-size: 13px; font-weight: 600; border-radius: 6px; border: none; cursor: pointer; transition: background-color 0.15s ease;}
     .btn-card-reset:hover { background-color: var(--btn-secondary-hover); }
 
-    .collapsible-card {
-      background-color: var(--bg-card);
-      border: 1px solid var(--border-main);
-      border-radius: 8px;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      flex-shrink: 0; /* Impide que la tarjeta se colapse incorrectamente por flexbox */
-    }
+    .collapsible-card { background-color: var(--bg-card); border: 1px solid var(--border-main); border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; flex-shrink: 0; }
     .collapsible-trigger {
-      width: 100%;
-      background: none;
-      border: none;
-      color: var(--text-main);
-      padding: 12px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      cursor: pointer;
-      font-weight: 700;
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
+      width: 100%; background: none; border: none; color: var(--text-main); padding: 12px;
+      display: flex; justify-content: space-between; align-items: center; cursor: pointer;
+      font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
     }
     .collapsible-trigger-title { border-left: 3px solid #2563eb; padding-left: 6px; color: var(--text-muted); }
     .collapsible-arrow { font-size: 9px; color: var(--text-muted); transition: transform 0.2s ease; }
@@ -238,7 +196,6 @@
 
     .theme-dropdown-container { position: absolute; top: 14px; right: 14px; z-index: 100; }
     .dropdown-gear-btn { background-color: var(--bg-card); border: 1px solid var(--border-main); color: var(--text-main); width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-    .dropdown-gear-btn:hover { background-color: var(--btn-secondary); border-color: var(--border-canvas); }
     .dropdown-card { display: none; position: absolute; top: calc(100% + 6px); right: 0; width: 260px; background-color: var(--bg-card); border: 1px solid var(--border-main); border-radius: 8px; padding: 14px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3); }
     .theme-dropdown-container.is-active .dropdown-card { display: block; }
     .color-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 11px; }
@@ -354,8 +311,8 @@
       </div>
 
       <div class="theme-dropdown-container" id="ui-dropdown-container">
-        <button class="dropdown-gear-btn" id="ui-dropdown-trigger" title="Configuración de interfaz">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <button class="dropdown-gear-btn" id="ui-dropdown-trigger">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         </button>
         <div class="dropdown-card">
           <h3>Estilo de Interfaz</h3>
