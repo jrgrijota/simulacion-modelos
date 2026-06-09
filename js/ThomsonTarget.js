@@ -1,11 +1,11 @@
 class ThomsonTarget {
   constructor(x, y, radius, numElectrons, isSimplified = false, currentModel = "thomson") {
-    this.pos = createVector(x, y); 
+    this.pos = { x: x, y: y }; // Objeto literal de bajo coste computacional
     this.R = radius;               
     this.isSimplified = isSimplified; 
     this.model = currentModel; 
     
-    this.ke = 1500.0; // Escala óptima de acoplamiento dieléctrico       
+    this.ke = 1500.0; 
     this.Z = numElectrons;   
     
     this.electrons = [];     
@@ -47,8 +47,8 @@ class ThomsonTarget {
         for (let i = 0; i < electronsInRing; i++) {
           let initialAngle = (TWO_PI / electronsInRing) * i + (r * 0.25);
           this.electrons.push({
-            pos: createVector(this.pos.x + ringRadius * cos(initialAngle), this.pos.y + ringRadius * sin(initialAngle)),
-            vel: createVector(0, 0),
+            pos: { x: this.pos.x + ringRadius * Math.cos(initialAngle), y: this.pos.y + ringRadius * Math.sin(initialAngle) },
+            vel: { x: 0, y: 0 },
             mass: 1,
             physicsRadius: 0.005,
             rLayer: ringRadius,
@@ -58,28 +58,28 @@ class ThomsonTarget {
         }
       }
 
-      let goldenAngle = 137.5 * (PI / 180); 
+      let goldenAngle = 137.5 * (Math.PI / 180); 
       for (let i = 0; i < positiveSlots; i++) {
-        let r = this.R * sqrt(i / positiveSlots) * 0.95; 
+        let r = this.R * Math.sqrt(i / positiveSlots) * 0.95; 
         let angle = i * goldenAngle;
-        this.positivePoints.push(createVector(this.pos.x + r * cos(angle), this.pos.y + r * sin(angle)));
+        this.positivePoints.push({ x: this.pos.x + r * Math.cos(angle), y: this.pos.y + r * Math.sin(angle) });
       }
 
     } else {
       let n = this.Z;
-      let coreRadiusBase = 1.6 * sqrt(n * 2);
+      let coreRadiusBase = 1.6 * Math.sqrt(n * 2);
       this.coreRadius = constrain(coreRadiusBase, 3, 15);
 
       if (!this.isSimplified) {
         for (let i = 0; i < n; i++) {
-          let r = this.coreRadius * sqrt(random(0, 1));
+          let r = this.coreRadius * Math.sqrt(random(0, 1));
           let angle = random(0, TWO_PI);
-          this.nucleons.push({ pos: createVector(this.pos.x + r * cos(angle), this.pos.y + r * sin(angle)), type: "proton" });
+          this.nucleons.push({ pos: { x: this.pos.x + r * Math.cos(angle), y: this.pos.y + r * Math.sin(angle) }, type: "proton" });
         }
         for (let i = 0; i < n; i++) {
-          let r = this.coreRadius * sqrt(random(0, 1));
+          let r = this.coreRadius * Math.sqrt(random(0, 1));
           let angle = random(0, TWO_PI);
-          this.nucleons.push({ pos: createVector(this.pos.x + r * cos(angle), this.pos.y + r * sin(angle)), type: "neutron" });
+          this.nucleons.push({ pos: { x: this.pos.x + r * Math.cos(angle), y: this.pos.y + r * Math.sin(angle) }, type: "neutron" });
         }
       }
 
@@ -97,8 +97,8 @@ class ThomsonTarget {
         for (let i = 0; i < eInLayer; i++) {
           let initialAngle = (TWO_PI / eInLayer) * i;
           this.electrons.push({
-            pos: createVector(this.pos.x + layerRadius * cos(initialAngle), this.pos.y + layerRadius * sin(initialAngle)),
-            vel: createVector(0, 0),
+            pos: { x: this.pos.x + layerRadius * Math.cos(initialAngle), y: this.pos.y + layerRadius * Math.sin(initialAngle) },
+            vel: { x: 0, y: 0 },
             mass: 1,
             physicsRadius: 0.005,
             rLayer: layerRadius,
@@ -117,14 +117,16 @@ class ThomsonTarget {
     for (let e of this.electrons) {
       if (!e.isEjected) {
         let currentAngle = e.angle + (this.orbitAngle * (20.0 / e.rLayer));
-        e.pos.x = this.pos.x + e.rLayer * cos(currentAngle);
-        e.pos.y = this.pos.y + e.rLayer * sin(currentAngle);
+        e.pos.x = this.pos.x + e.rLayer * Math.cos(currentAngle);
+        e.pos.y = this.pos.y + e.rLayer * Math.sin(currentAngle);
       } else {
-        e.pos.add(e.vel);
+        e.pos.x += e.vel.x;
+        e.pos.y += e.vel.y;
       }
     }
   }
 
+  // OPTIMIZACIÓN DE COLISIONES: Sin instanciación de vectores, evaluación primaria mediante cuadrados
   checkElectronCollisions(alpha) {
     let isFoil = (typeof currentMode !== 'undefined' && currentMode === "foil");
     let scaleFactor = isFoil ? (1.0 / 30.0) : 1.0;
@@ -132,62 +134,86 @@ class ThomsonTarget {
     for (let e of this.electrons) {
       if (e.isEjected) continue;
       
-      let d = p5.Vector.dist(alpha.pos, e.pos);
-      let threshold = (alpha.physicsRadius + e.physicsRadius) * scaleFactor;
+      let dx = alpha.pos.x - e.pos.x;
+      let dy = alpha.pos.y - e.pos.y;
+      let dSq = dx * dx + dy * dy;
       
-      if (d < threshold) {
-        let normal = p5.Vector.sub(e.pos, alpha.pos).normalize();
+      let threshold = (alpha.physicsRadius + e.physicsRadius) * scaleFactor;
+      let thresholdSq = threshold * threshold;
+      
+      if (dSq < thresholdSq && dSq > 0) {
+        let d = Math.sqrt(dSq);
+        let nx = -dx / d; 
+        let ny = -dy / d;
+        
         let kx = alpha.vel.x - e.vel.x;
         let ky = alpha.vel.y - e.vel.y;
-        let p = 2 * (normal.x * kx + normal.y * ky) / (alpha.mass + e.mass);
+        let p = 2 * (nx * kx + ny * ky) / (alpha.mass + e.mass);
         
-        alpha.vel.x -= p * e.mass * normal.x;
-        alpha.vel.y -= p * e.mass * normal.y;
-        e.vel.x += p * alpha.mass * normal.x;
-        e.vel.y += p * alpha.mass * normal.y;
+        alpha.vel.x -= p * e.mass * nx;
+        alpha.vel.y -= p * e.mass * ny;
+        e.vel.x += p * alpha.mass * nx;
+        e.vel.y += p * alpha.mass * ny;
         
         e.isEjected = true; 
-        e.pos.add(p5.Vector.mult(normal, 0.5));
+        e.pos.x += nx * 0.5;
+        e.pos.y += ny * 0.5;
       }
     }
   }
 
+  // OPTIMIZACIÓN MATEMÁTICA: Cálculos escalares puros devolviendo Duck-Typing de interfaz vector {x, y}
   calculateNetForce(alpha) {
-    let fNet = createVector(0, 0);
-    let rVec = p5.Vector.sub(alpha.pos, this.pos);
-    let r = rVec.mag();
+    let fx = 0, fy = 0;
+    let dx = alpha.pos.x - this.pos.x;
+    let dy = alpha.pos.y - this.pos.y;
+    let rSq = dx * dx + dy * dy;
+    let r = Math.sqrt(rSq);
 
     let isFoil = (typeof currentMode !== 'undefined' && currentMode === "foil");
     let screeningLength = isFoil ? this.R * 0.4 : this.R * 1.2;
     
-    if (r > screeningLength && isFoil) return fNet; 
+    if (r > screeningLength && isFoil) return { x: 0, y: 0 }; 
+
+    let nx = r > 0 ? dx / r : 0;
+    let ny = r > 0 ? dy / r : 0;
 
     if (this.model === "thomson") {
+      let fMag = 0;
       if (r < this.R) {
-        let qEncl = this.Z * pow(r / this.R, 3);
-        let fMag = (this.ke * 2.0 * qEncl) / (r * r + 1.0); 
-        fNet.add(rVec.copy().normalize().mult(fMag));
+        let qEncl = this.Z * (r * r * r) / (this.R * this.R * this.R);
+        fMag = (this.ke * 2.0 * qEncl) / (rSq + 1.0); 
       } else {
-        let fMag = (this.ke * 2.0 * this.Z) / (r * r + 1.0);
-        fNet.add(rVec.copy().normalize().mult(fMag));
+        fMag = (this.ke * 2.0 * this.Z) / (rSq + 1.0);
       }
+      fx += nx * fMag;
+      fy += ny * fMag;
+
       for (let e of this.electrons) {
         if (!e.isEjected) {
-          let eVec = p5.Vector.sub(alpha.pos, e.pos);
-          let eDist = eVec.mag();
-          if (eDist > screeningLength) continue;
-          let fE = (this.ke * 2.0 * -1.0) / (eDist * eDist + 1.0);
-          fNet.add(eVec.normalize().mult(fE));
+          let edx = alpha.pos.x - e.pos.x;
+          let edy = alpha.pos.y - e.pos.y;
+          let edSq = edx * edx + edy * edy;
+          let edist = Math.sqrt(edSq);
+          if (edist > screeningLength) continue;
+          
+          let fE = (this.ke * 2.0 * -1.0) / (edSq + 1.0);
+          let enx = edist > 0 ? edx / edist : 0;
+          let eny = edist > 0 ? edy / edist : 0;
+          fx += enx * fE;
+          fy += eny * fE;
         }
       }
     } else {
-      let factorAtenuacion = exp(-r / screeningLength);
-      let fMag = ((this.ke * 2.0 * this.Z) / (r * r + 0.1)) * factorAtenuacion;
+      let factorAtenuacion = Math.exp(-r / screeningLength);
+      let fMag = ((this.ke * 2.0 * this.Z) / (rSq + 0.1)) * factorAtenuacion;
       
       if (fMag > 90000) fMag = 90000; 
-      fNet.add(rVec.copy().normalize().mult(fMag));
+      fx += nx * fMag;
+      fy += ny * fMag;
     }
-    return fNet;
+    
+    return { x: fx, y: fy };
   }
 
   display() {
@@ -199,30 +225,25 @@ class ThomsonTarget {
     let electronColor = document.getElementById("ui-color-electron") ? color(document.getElementById("ui-color-electron").value) : color(0, 160, 255);
     let visualERadius = parseFloat(document.getElementById("ui-radius-electron") ? document.getElementById("ui-radius-electron").value : 2.0);
 
-    // CONTROL DEL MODELO EN FUNCIÓN DE LA VISTA SELECCIONADA
     if (this.model === "thomson") {
       if (!this.isSimplified) {
-        // Modo Átomo Aislado de Thomson
         fill(255, 190, 0, theme === "light" ? 22 : 12);
         stroke(255, 190, 0, theme === "light" ? 60 : 40);
         strokeWeight(1);
         ellipse(this.pos.x, this.pos.y, this.R * 2, this.R * 2);
       } else {
-        // MODO LÁMINA: Incremento sustancial del contraste de fondo del "pudín" de Thomson
         if (theme === "light") {
-          fill(255, 190, 0, 45);   // Opacidad reforzada para proyectores en fondo claro
-          stroke(217, 119, 6, 120); // Trazo ámbar oscuro bien delimitado
+          fill(255, 190, 0, 45);   
+          stroke(217, 119, 6, 120); 
         } else {
-          fill(255, 190, 0, 28);   // Opacidad luminosa incrementada para fondo oscuro
-          stroke(255, 215, 0, 150); // Trazo dorado eléctrico de alto contraste
+          fill(255, 190, 0, 28);   
+          stroke(255, 215, 0, 150); 
         }
         strokeWeight(1.2); 
         ellipse(this.pos.x, this.pos.y, this.R * 2, this.R * 2);
       }
     } else {
-      // Modelo de Rutherford
       if (!this.isSimplified) {
-        // Modo Átomo Aislado de Rutherford
         stroke(theme === "light" ? color(0, 0, 0, 20) : color(255, 255, 255, 15));
         strokeWeight(0.5);
         noFill();
@@ -234,18 +255,16 @@ class ThomsonTarget {
           ellipse(nuc.pos.x, nuc.pos.y, 3, 3);
         }
       } else {
-        // MODO LÁMINA: Incremento radical del contraste de fondo de la red vacía de Rutherford
         if (theme === "light") {
-          fill(37, 99, 235, 18);   // Relleno azulino translúcido nítido para resaltar el espacio confinado
-          stroke(29, 78, 216, 140); // Trazo azul oscuro denso y definido
+          fill(15, 23, 42, 6); 
+          stroke(15, 23, 42, 50); 
         } else {
-          fill(0, 160, 255, 14);   // Relleno cian sutil de alta luminiscencia interna
-          stroke(0, 190, 255, 160); // Trazo cian brillante para destacar contra el fondo negro
+          fill(255, 255, 255, 4); 
+          stroke(255, 255, 255, 65); 
         }
-        strokeWeight(1.2); 
+        strokeWeight(1.0); 
         ellipse(this.pos.x, this.pos.y, this.R * 2, this.R * 2);
         
-        // Núcleo central de Rutherford fijo
         fill(protonColor);
         noStroke();
         ellipse(this.pos.x, this.pos.y, 3.5, 3.5);

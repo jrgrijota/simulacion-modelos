@@ -78,6 +78,7 @@ function draw() {
     ellipse(imp.x, imp.y, 5, 5);
   }
 
+  // OPTIMIZACIÓN: Bucle principal de físicas procesado con matemáticas primitivas y Culling de 2 Radios
   for (let i = alphas.length - 1; i >= 0; i--) {
     let a = alphas[i];
     let targetAtom = null;
@@ -85,19 +86,32 @@ function draw() {
     if (currentMode === "atom") {
       targetAtom = singleAtom;
     } else {
-      let minDist = Infinity;
-      let candidates = [];
+      let minDistSq = Infinity;
+      let candidate = null;
+      let multipleCandidates = false;
       
+      // Búsqueda del vecino más cercano utilizando la distancia al cuadrado (Ahorro de Math.sqrt)
       for (let target of foilAtoms) {
-        let d = p5.Vector.dist(a.pos, target.pos);
-        if (d < minDist) {
-          minDist = d;
-          candidates = [target];
-        } else if (abs(d - minDist) < 0.001) {
-          candidates.push(target);
+        let dx = a.pos.x - target.pos.x;
+        let dy = a.pos.y - target.pos.y;
+        let dSq = dx * dx + dy * dy;
+        
+        if (dSq < minDistSq) {
+          minDistSq = dSq;
+          candidate = target;
+          multipleCandidates = false;
+        } else if (abs(dSq - minDistSq) < 0.0001) {
+          multipleCandidates = true;
         }
       }
-      if (candidates.length === 1) targetAtom = candidates[0];
+      
+      if (!multipleCandidates && candidate) {
+        // CULLING ESPACIAL: Ignorar si está a más de 2 radios de distancia del centro
+        let radioCorte = candidate.R * 2.0;
+        if (minDistSq <= (radioCorte * radioCorte)) {
+          targetAtom = candidate;
+        }
+      }
     }
 
     a.integrate(1.0, targetAtom);

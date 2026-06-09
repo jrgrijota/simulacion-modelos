@@ -1,8 +1,8 @@
 class AlphaParticle {
   constructor(x, y, vx, vy = 0) {
-    this.pos = createVector(x, y);
-    this.vel = createVector(vx, vy);
-    this.acc = createVector(0, 0);
+    this.pos = { x: x, y: y }; // Optimizado a objeto literal internamente para las operaciones matemáticas masivas
+    this.vel = { x: vx, y: vy };
+    this.acc = { x: 0, y: 0 };
     
     this.mass = 7350; 
     this.visualRadius = 3.5; 
@@ -12,18 +12,13 @@ class AlphaParticle {
     this.isDead = false;
     this.deviationAngle = 0;
     this.hasBeenCounted = false;
-    this.dt = 1.0;
 
     let colorInput = document.getElementById("ui-color-alpha");
     this.baseColorHex = colorInput ? colorInput.value : "#00ff00";
     this.particleColor = color(this.baseColorHex);
   }
 
-  applyForce(f) {
-    let fOverM = p5.Vector.div(f, this.mass);
-    this.acc.add(fOverM);
-  }
-
+  // Integrador de Verlet por desdoblamiento primitivo. Evita la instanciación de clases de p5.Vector
   integrate(dt, targetAtom) {
     if (this.isDead) return;
 
@@ -31,20 +26,27 @@ class AlphaParticle {
     let subDt = dt / subSteps;
 
     for (let step = 0; step < subSteps; step++) {
-      this.acc.mult(0);
+      this.acc.x = 0;
+      this.acc.y = 0;
       
       if (targetAtom) {
         let fElectrica = targetAtom.calculateNetForce(this);
-        this.applyForce(fElectrica);
+        // Apply Force en línea para ahorrar llamadas a función
+        this.acc.x += fElectrica.x / this.mass;
+        this.acc.y += fElectrica.y / this.mass;
+        
         targetAtom.checkElectronCollisions(this);
       }
 
-      this.pos.add(p5.Vector.mult(this.vel, subDt).add(p5.Vector.mult(this.acc, 0.5 * subDt * subDt)));
-      this.vel.add(p5.Vector.mult(this.acc, subDt));
+      // Integración simplética cruda
+      this.pos.x += this.vel.x * subDt + 0.5 * this.acc.x * subDt * subDt;
+      this.pos.y += this.vel.y * subDt + 0.5 * this.acc.y * subDt * subDt;
+      this.vel.x += this.acc.x * subDt;
+      this.vel.y += this.acc.y * subDt;
     }
 
-    let heading = this.vel.heading();
-    this.deviationAngle = abs(degrees(heading));
+    let heading = Math.atan2(this.vel.y, this.vel.x);
+    this.deviationAngle = Math.abs(heading * (180 / Math.PI));
     
     let amt = constrain(this.deviationAngle / 35.0, 0, 1);
     let colorInput = document.getElementById("ui-color-alpha");
@@ -52,7 +54,7 @@ class AlphaParticle {
     this.particleColor = lerpColor(baseColor, color(255, 0, 0), amt);
 
     if (frameCount % 2 === 0) {
-      this.history.push(this.pos.copy());
+      this.history.push({ x: this.pos.x, y: this.pos.y });
       if (this.history.length > 45) this.history.shift();
     }
   }
