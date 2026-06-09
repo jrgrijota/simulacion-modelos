@@ -65,7 +65,8 @@
       gap: 20px;
       width: 100%;
       max-width: 1280px;
-      height: 720px;
+      height: calc(100vh - 32px);
+      min-height: 560px;
       background-color: var(--bg-container);
       border: 1px solid var(--border-main);
       border-radius: 12px;
@@ -73,17 +74,31 @@
       box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
     }
 
+    /* CORRECCIÓN CRÍTICA: Confinamiento estricto de altura máxima y desborde */
     .control-panel {
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 10px;
       height: 100%;
-      overflow-y: auto;
-      padding-right: 4px;
+      max-height: 100%; /* Fuerza al contenedor a no estirarse infinitamente */
+      overflow-y: auto;  /* Activa la barra lateral cuando hay desborde real */
+      padding-right: 6px;
     }
 
-    .control-panel::-webkit-scrollbar { width: 4px; }
-    .control-panel::-webkit-scrollbar-thumb { background: var(--border-main); border-radius: 2px; }
+    /* Estilizado aséptico de la barra de desplazamiento */
+    .control-panel::-webkit-scrollbar { 
+      width: 6px; 
+    }
+    .control-panel::-webkit-scrollbar-thumb { 
+      background: var(--border-main); 
+      border-radius: 4px; 
+    }
+    .control-panel::-webkit-scrollbar-thumb:hover {
+      background: var(--border-canvas);
+    }
+    .control-panel::-webkit-scrollbar-track { 
+      background: transparent; 
+    }
 
     .control-card {
       background-color: var(--bg-card);
@@ -98,76 +113,176 @@
       text-transform: uppercase;
       letter-spacing: 0.08em;
       color: var(--text-muted);
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       border-left: 3px solid #2563eb;
       padding-left: 6px;
     }
 
-    .control-group { margin-bottom: 10px; }
-    label { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-label); margin-bottom: 4px; }
-    .data-readout { font-family: monospace; font-weight: bold; color: #2563eb; background-color: var(--bg-body); padding: 1px 6px; border-radius: 4px; font-size: 11px; }
+    .grid-2col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    /* Proporciones asimétricas ajustadas para visualización en una línea */
+    .grid-asymmetric {
+      display: grid;
+      grid-template-columns: 0.85fr 1.15fr;
+      gap: 10px;
+    }
+
+    .select-wrapper {
+      position: relative;
+      width: 100%;
+    }
+    .select-wrapper::after {
+      content: "▼";
+      font-size: 8px;
+      color: var(--text-muted);
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      pointer-events: none;
+    }
+
+    .control-group { margin-bottom: 8px; }
+    .control-group:last-child { margin-bottom: 0; }
+    
+    label { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--text-label); margin-bottom: 4px; white-space: nowrap; }
+    .data-readout { font-family: monospace; font-weight: bold; color: #2563eb; background-color: var(--bg-body); padding: 1px 4px; border-radius: 3px; font-size: 10.5px; }
 
     input[type="range"], select {
       width: 100%;
       background-color: var(--bg-input);
       border: 1px solid var(--border-main);
       color: var(--text-main);
-      padding: 6px 10px;
-      font-size: 13px;
+      padding: 6px 20px 6px 8px;
+      font-size: 12.5px;
       border-radius: 6px;
       outline: none;
+      -webkit-appearance: none;
+      appearance: none;
     }
 
-    input[type="range"] { -webkit-appearance: none; height: 6px; padding: 0; }
+    input[type="range"] { height: 6px; padding: 0; }
+    input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 11px; height: 11px; border-radius: 50%; background: #2563eb; cursor: pointer; }
 
-    .canvas-area {
-      position: relative;
+    .trigger-inline-buttons {
+      margin-top: 10px;
+    }
+    .trigger-inline-buttons button {
       width: 100%;
-      height: 100%;
-      background-color: var(--bg-input);
-      border-radius: 8px;
-      border: 1px solid var(--border-canvas);
-      overflow: hidden;
+      padding: 8px;
+      font-size: 12.5px;
+      font-weight: 600;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: background-color 0.15s ease;
     }
 
+    #ui-btn-playpause { background-color: #10b981; color: white; }
+    #ui-btn-playpause:hover { background-color: #059669; }
+    #ui-btn-playpause.is-paused { background-color: #2563eb; }
+    #ui-btn-playpause.is-paused:hover { background-color: #1d4ed8; }
+    #ui-btn-playpause:disabled { background-color: var(--btn-secondary); opacity: 0.3; cursor: not-allowed; color: var(--text-muted); }
+    
+    .btn-card-reset { background-color: var(--btn-secondary); color: var(--text-main); width: 100%; padding: 10px; font-size: 13px; font-weight: 600; border-radius: 6px; border: none; cursor: pointer; transition: background-color 0.15s ease;}
+    .btn-card-reset:hover { background-color: var(--btn-secondary-hover); }
+
+    .collapsible-card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-main);
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0; /* Impide que la tarjeta se colapse incorrectamente por flexbox */
+    }
+    .collapsible-trigger {
+      width: 100%;
+      background: none;
+      border: none;
+      color: var(--text-main);
+      padding: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .collapsible-trigger-title { border-left: 3px solid #2563eb; padding-left: 6px; color: var(--text-muted); }
+    .collapsible-arrow { font-size: 9px; color: var(--text-muted); transition: transform 0.2s ease; }
+    .collapsible-content { max-height: 0; overflow: hidden; padding: 0 12px; transition: max-height 0.23s cubic-bezier(0.4, 0, 0.2, 1), padding 0.23s ease; }
+    .collapsible-card.is-expanded .collapsible-content { max-height: 200px; padding-bottom: 12px; }
+    .collapsible-card.is-expanded .collapsible-arrow { transform: rotate(180deg); }
+
+    .stat-row { display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; margin-bottom: 6px; color: var(--text-label); }
+    .stat-row:last-child { margin-bottom: 0; }
+    .stat-val { font-family: monospace; font-weight: bold; color: #00ff00; }
+    .stat-val.amber { color: #ffb000; }
+    .stat-val.red { color: #ff3333; }
+
+    .canvas-area { position: relative; width: 100%; height: 100%; background-color: var(--bg-input); border-radius: 8px; border: 1px solid var(--border-canvas); overflow: hidden; }
     #canvas-holder { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; }
 
+    .manual-hint-banner { position: absolute; top: 14px; left: 14px; background-color: rgba(37, 99, 235, 0.9); color: #ffffff; padding: 8px 14px; font-size: 12px; font-weight: 600; border-radius: 6px; z-index: 90; pointer-events: none; box-shadow: 0 4px 12px rgba(0,0,0,0.25); transition: opacity 0.2s ease; }
+
     .theme-dropdown-container { position: absolute; top: 14px; right: 14px; z-index: 100; }
-    .dropdown-trigger-btn { background-color: var(--bg-card); border: 1px solid var(--border-main); color: var(--text-main); padding: 8px 12px; font-size: 12px; font-weight: 600; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+    .dropdown-gear-btn { background-color: var(--bg-card); border: 1px solid var(--border-main); color: var(--text-main); width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+    .dropdown-gear-btn:hover { background-color: var(--btn-secondary); border-color: var(--border-canvas); }
     .dropdown-card { display: none; position: absolute; top: calc(100% + 6px); right: 0; width: 260px; background-color: var(--bg-card); border: 1px solid var(--border-main); border-radius: 8px; padding: 14px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3); }
     .theme-dropdown-container.is-active .dropdown-card { display: block; }
     .color-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 11px; }
-    .color-picker-input { width: 20px; height: 20px; border: none; cursor: pointer; background: none; }
+    .color-picker-input { width: 20px; height: 20px; border: none; cursor: pointer; background: none; -webkit-appearance: none; appearance: none; }
+    .color-picker-input::-webkit-color-swatch { border: 1px solid var(--border-main); border-radius: 50%; }
 
-    .btn-container { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: auto; }
+    .btn-container { margin-top: auto; padding-bottom: 2px; flex-shrink: 0; }
   </style>
 </head>
 <body>
 
   <div class="simulation-container">
     <div class="control-panel">
+      
       <div class="control-card">
         <h2>Paradigma Atómico</h2>
-        <div class="control-group">
-          <label>Modelo del Átomo</label>
-          <select id="ui-atom-model">
-            <option value="thomson">J.J. Thomson (Pudín de Pasas)</option>
-            <option value="rutherford">E. Rutherford (Modelo Nuclear)</option>
-          </select>
+        <div class="grid-2col control-group">
+          <div>
+            <label>Modelo atómico</label>
+            <div class="select-wrapper">
+              <select id="ui-atom-model">
+                <option value="thomson">Thomson</option>
+                <option value="rutherford">Rutherford</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label>Vista</label>
+            <div class="select-wrapper">
+              <select id="ui-mode-select">
+                <option value="atom">Átomo</option>
+                <option value="foil">Lámina</option>
+              </select>
+            </div>
+          </div>
         </div>
-        <div class="control-group">
-          <label>Vista de Laboratorio</label>
-          <select id="ui-mode-select">
-            <option value="atom">Átomo Individual</option>
-            <option value="foil">Lámina Macroscópica</option>
-          </select>
-        </div>
+        
         <div class="control-group" id="group-layers" style="display: none;">
-          <label>Espesor de la Lámina <span class="data-readout" id="layers-val">3</span></label>
+          <label>Espesor <span class="data-readout" id="layers-val">3</span></label>
           <input type="range" id="ui-layers-slider" min="1" max="5" value="3">
         </div>
+        
         <div class="control-group">
-          <label>Número Atómico (Z) <span class="data-readout" id="z-val">14</span></label>
+          <label>Carga (Z) <span class="data-readout" id="z-val">14</span></label>
           <input type="range" id="ui-z-slider" min="1" max="100" value="14">
         </div>
       </div>
@@ -175,42 +290,82 @@
       <div class="control-card">
         <h2>Lógica de Disparo</h2>
         <div class="control-group">
-          <label>Modo de Emisión</label>
-          <select id="ui-trigger-select">
-            <option value="click">Disparo Manual (Clic)</option>
-            <option value="continuous">Ráfaga Continua</option>
-          </select>
+          <label>Emisión</label>
+          <div class="select-wrapper">
+            <select id="ui-trigger-select">
+              <option value="click">Manual (Clic)</option>
+              <option value="continuous">Ráfaga Continua</option>
+            </select>
+          </div>
         </div>
-        <div class="control-group" id="group-rate" style="opacity: 0.3; pointer-events: none;">
-          <label>Frecuencia de Flujo <span class="data-readout" id="rate-val">20</span></label>
-          <input type="range" id="ui-rate-slider" min="1" max="60" value="20">
+        
+        <div class="grid-asymmetric control-group">
+          <div id="group-rate" style="display: none;">
+            <label>Flujo <span class="data-readout" id="rate-val">20</span></label>
+            <input type="range" id="ui-rate-slider" min="1" max="60" value="20">
+          </div>
+          <div id="group-energy" style="grid-column: span 2;">
+            <label>Energía de la partícula α <span class="data-readout" id="speed-val">10.0</span></label>
+            <input type="range" id="ui-speed-slider" min="4" max="16" step="0.5" value="10">
+          </div>
+        </div>
+        
+        <div class="trigger-inline-buttons">
+          <button id="ui-btn-playpause" disabled>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            <span>Play</span>
+          </button>
         </div>
       </div>
 
-      <div class="control-card">
-        <h2>Parámetros del Proyectil</h2>
-        <div class="control-group">
-          <label>Velocidad Inicial <span class="data-readout" id="speed-val">10.0</span></label>
-          <input type="range" id="ui-speed-slider" min="4" max="16" step="0.5" value="10">
+      <div class="collapsible-card" id="ui-panel-stats">
+        <button class="collapsible-trigger" id="ui-stats-trigger">
+          <span class="collapsible-trigger-title">Datos Estadísticos</span>
+          <span class="collapsible-arrow">▼</span>
+        </button>
+        <div class="collapsible-content">
+          <div class="stat-row">
+            <span>Proyectiles Emitidos:</span>
+            <span class="stat-val" id="stat-total" style="color: var(--text-main);">0</span>
+          </div>
+          <div class="stat-row">
+            <span>Sin Desviación (&lt;1°):</span>
+            <span class="stat-val" id="stat-straight">0%</span>
+          </div>
+          <div class="stat-row">
+            <span>Dispersados (1° - 90°):</span>
+            <span class="stat-val amber" id="stat-deviated">0%</span>
+          </div>
+          <div class="stat-row">
+            <span>Retrodispersión (&gt;90°):</span>
+            <span class="stat-val red" id="stat-rebound">0%</span>
+          </div>
         </div>
       </div>
 
       <div class="btn-container">
-        <button id="ui-btn-shoot">Lanzar Proyectil</button>
-        <button id="ui-btn-reset" class="btn-secondary">Limpiar</button>
+        <button id="ui-btn-reset" class="btn-clear btn-card-reset">Limpiar Pantalla y Datos</button>
       </div>
     </div>
 
     <div class="canvas-area">
+      <div id="ui-manual-hint" class="manual-hint-banner">
+        Haz clic en la banda azul de la izquierda para lanzar proyectiles a diferentes alturas
+      </div>
+
       <div class="theme-dropdown-container" id="ui-dropdown-container">
-        <button class="dropdown-trigger-btn" id="ui-dropdown-trigger">Apariencia</button>
+        <button class="dropdown-gear-btn" id="ui-dropdown-trigger" title="Configuración de interfaz">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
         <div class="dropdown-card">
           <h3>Estilo de Interfaz</h3>
           <div class="control-group">
-            <select id="ui-theme-select">
-              <option value="dark">Modo Oscuro</option>
-              <option value="light">Modo Claro</option>
-            </select>
+            <div class="select-wrapper">
+              <select id="ui-theme-select">
+                <option value="dark">Modo Oscuro</option>
+                <option value="light">Modo Claro</option>
+              </select>
+            </div>
           </div>
           <h3>Escala Gráfica</h3>
           <div class="control-group">

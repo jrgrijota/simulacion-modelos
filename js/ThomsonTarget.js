@@ -12,6 +12,7 @@ class ThomsonTarget {
     this.electrons = [];     
     this.positivePoints = [];
     this.nucleons = []; 
+    this.orbitAngle = 0;
     
     if (!this.isSimplified) {
       this.generateAtom();
@@ -46,13 +47,10 @@ class ThomsonTarget {
         let electronsInRing = targetRings[r];
         let ringRadius = this.R * 0.85; 
         if (numRings > 1) ringRadius = this.R * (0.15 + (0.70 * (r / (numRings - 1))));
-        if (electronsInRing === 1 && r === 0) {
-          this.electrons.push(createVector(this.pos.x, this.pos.y));
-          continue;
-        }
+        
         for (let i = 0; i < electronsInRing; i++) {
-          let angle = (TWO_PI / electronsInRing) * i + (r * 0.25);
-          this.electrons.push(createVector(this.pos.x + ringRadius * cos(angle), this.pos.y + ringRadius * sin(angle)));
+          let initialAngle = (TWO_PI / electronsInRing) * i + (r * 0.25);
+          this.electrons.push({ rLayer: ringRadius, initAngle: initialAngle });
         }
       }
 
@@ -94,8 +92,8 @@ class ThomsonTarget {
         let layerRadius = this.R * (0.25 + 0.70 * (layerIndex / 4.0));
         
         for (let i = 0; i < eInLayer; i++) {
-          let angle = (TWO_PI / eInLayer) * i + (layerIndex * 0.5);
-          this.electrons.push(createVector(this.pos.x + layerRadius * cos(angle), this.pos.y + layerRadius * sin(angle)));
+          let initialAngle = (TWO_PI / eInLayer) * i + (layerIndex * 0.5);
+          this.electrons.push({ rLayer: layerRadius, initAngle: initialAngle });
         }
         remainingElectrons -= eInLayer;
         layerIndex++;
@@ -110,34 +108,25 @@ class ThomsonTarget {
     let toCenter = p5.Vector.sub(alpha.pos, this.pos);
     let distToCenter = toCenter.mag();
 
-    // 1. COMPORTAMIENTO EN MODO LÁMINA MACROSCÓPICA (ORTOGONAL CÚBICA)
     if (this.isSimplified) {
       let rVec = p5.Vector.sub(alpha.pos, this.pos);
       
       if (this.model === "thomson") {
-        // Si está fuera de las fronteras físicas del átomo, no hay fuerza confinante (Gauss)
         if (distToCenter > this.R) return fNet; 
-        
-        // Masa positiva diluida estable: permite avance lineal limpio sin oscilaciones
         let fuerzaEfectiva = 0.8; 
         let mag = (fuerzaEfectiva * rVec.mag()) / (this.R * this.R); 
         return rVec.normalize().mult(mag);
       } else {
-        // Rutherford lámina: Campo de Coulomb extendido para compensar la escala del píxel central
-        if (distToCenter > this.R * 2.5) return fNet; 
-        
         let rDistSq = rVec.magSq();
         let softeningFoilSq = pow(1.5, 2); 
-        let magRutherford = (this.ke * this.qAlpha * this.Z) / (rDistSq + softeningFoilSq);
-        
-        return rVec.normalize().mult(magRutherford);
+        let magBase = (this.ke * this.qAlpha * this.Z) / (rDistSq + softeningFoilSq);
+        let shieldingFactor = exp(-distToCenter / (this.R * 0.75));
+        return rVec.normalize().mult(magBase * shieldingFactor);
       }
     }
 
-    // 2. COMPORTAMIENTO EN VISTA ATÓMICA AISLADA (Física intacta)
     if (this.model === "thomson") {
       if (distToCenter > this.R) return fNet;
-
       let softeningSq = pow(14.0, 2); 
       for (let pPos of this.positivePoints) {
         let rVec = p5.Vector.sub(alpha.pos, pPos);
@@ -145,16 +134,19 @@ class ThomsonTarget {
         let magP = (this.ke * this.qAlpha * this.qPositivePoint) / (rDistSq + softeningSq);
         fNet.add(rVec.normalize().mult(magP));
       }
-      for (let ePos of this.electrons) {
+      for (let e of this.electrons) {
+        let currentAngle = e.initAngle + (this.orbitAngle * (20.0 / e.rLayer));
+        let eX = this.pos.x + e.rLayer * cos(currentAngle);
+        let eY = this.pos.y + e.rLayer * sin(currentAngle);
+        let ePos = createVector(eX, eY);
         let rVec = p5.Vector.sub(alpha.pos, ePos);
         let rDistSq = rVec.magSq();
-        let magE = (this.ke * this.qAlpha * this.qElectronPoint) / (rDistSq + softeningSq);
+        let magE = (this.ke * this.qAlpha * -1.0) / (rDistSq + softeningSq);
         fNet.add(rVec.normalize().mult(magE));
       }
     } else {
       let rVec = p5.Vector.sub(alpha.pos, this.pos);
       let rDistSq = rVec.magSq();
-      
       let minimalCoreRadius = constrain(0.4 * sqrt(this.Z * 2), 2.5, 10);
       if (distToCenter < minimalCoreRadius) {
         alpha.vel.x *= -1; 
@@ -167,7 +159,11 @@ class ThomsonTarget {
       let magNucleus = (this.ke * this.qAlpha * this.Z) / (rDistSq + softeningRutherford);
       fNet.add(rVec.normalize().mult(magNucleus));
 
-      for (let ePos of this.electrons) {
+      for (let e of this.electrons) {
+        let currentAngle = e.initAngle + (this.orbitAngle * (20.0 / e.rLayer));
+        let eX = this.pos.x + e.rLayer * cos(currentAngle);
+        let eY = this.pos.y + e.rLayer * sin(currentAngle);
+        let ePos = createVector(eX, eY);
         let eVec = p5.Vector.sub(alpha.pos, ePos);
         let eDistSq = eVec.magSq();
         let magE = (this.ke * this.qAlpha * -1.0) / (eDistSq + pow(8.0, 2));
@@ -191,13 +187,14 @@ class ThomsonTarget {
     let themeMode = tInput ? tInput.value : "dark";
     let eRadius = rInput ? parseFloat(rInput.value) : 2;
 
+    this.orbitAngle += 0.015;
+
     if (!this.isSimplified) {
       if (this.model === "thomson") {
         fill(255, 110, 0, themeMode === "light" ? 55 : 70); 
         stroke(255, 90, 0, themeMode === "light" ? 140 : 160);
         strokeWeight(1.5);
         ellipse(this.pos.x, this.pos.y, this.R * 2, this.R * 2);
-
         fill(255, 50, 50, 120);
         noStroke();
         ellipse(this.pos.x, this.pos.y, 3, 3);
@@ -209,7 +206,6 @@ class ThomsonTarget {
         for (let l = 0; l <= layersToShow + 1; l++) {
           ellipse(this.pos.x, this.pos.y, this.R * (0.25 + 0.70 * (l / 4.0)) * 2);
         }
-
         noStroke();
         for (let nuc of this.nucleons) {
           if (nuc.type === "proton") fill(protonColor); 
@@ -221,7 +217,10 @@ class ThomsonTarget {
       fill(electronColor);
       noStroke();
       for (let e of this.electrons) {
-        ellipse(e.x, e.y, eRadius * 2, eRadius * 2); 
+        let currentAngle = e.initAngle + (this.orbitAngle * (20.0 / e.rLayer));
+        let eX = this.pos.x + e.rLayer * cos(currentAngle);
+        let eY = this.pos.y + e.rLayer * sin(currentAngle);
+        ellipse(eX, eY, eRadius * 2, eRadius * 2); 
       }
     } else {
       if (this.model === "thomson") {
