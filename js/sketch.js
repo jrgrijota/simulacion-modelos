@@ -491,8 +491,7 @@ function updateSidebarHistogram() {
   let hCanvas = document.getElementById("histogram-canvas");
   if (!hCanvas) return;
 
-  let tInput = document.getElementById("ui-theme-select");
-  let dark = !tInput || tInput.value !== "light";
+  let dark = uiCache.theme !== "light";
 
   let W = hCanvas.offsetWidth || 240;
   hCanvas.width = W;
@@ -501,7 +500,7 @@ function updateSidebarHistogram() {
   let ctx = hCanvas.getContext("2d");
   ctx.clearRect(0, 0, W, H);
 
-  let padL = 8, padR = 8, padTop = 20, padBot = 18;
+  let padL = 8, padR = 8, padTop = 26, padBot = 22;
   let aw = W - padL - padR;
   let ah = H - padTop - padBot;
   let ax = padL, ay = padTop;
@@ -512,14 +511,14 @@ function updateSidebarHistogram() {
   for (let c of angleBins) if (c > maxBin) maxBin = c;
 
   // Encabezado: título y contador total
-  ctx.font = "bold 10px sans-serif";
+  ctx.font = "bold 12px sans-serif";
   ctx.fillStyle = dark ? "rgba(148,163,184,1)" : "rgba(71,85,105,1)";
   ctx.textAlign = "left";
-  ctx.fillText("ÁNGULO DE DISPERSIÓN", ax, 14);
-  ctx.font = "10px monospace";
+  ctx.fillText("ÁNGULO DE DESVIACIÓN", ax, 16);
+  ctx.font = "12px monospace";
   ctx.textAlign = "right";
-  ctx.fillStyle = dark ? "rgba(100,120,160,1)" : "rgba(100,116,139,1)";
-  ctx.fillText("n=" + statTotal, W - padR, 14);
+  ctx.fillStyle = dark ? "rgba(120,140,185,1)" : "rgba(100,116,139,1)";
+  ctx.fillText("n=" + statTotal, W - padR, 16);
 
   // Eje base
   ctx.strokeStyle = dark ? "rgba(80,88,110,1)" : "rgba(148,163,184,1)";
@@ -555,14 +554,14 @@ function updateSidebarHistogram() {
   }
 
   // Etiquetas eje X
-  ctx.font = "9px sans-serif";
-  ctx.fillStyle = dark ? "rgba(120,130,155,1)" : "rgba(100,116,139,1)";
+  ctx.font = "11px sans-serif";
+  ctx.fillStyle = dark ? "rgba(140,150,175,1)" : "rgba(100,116,139,1)";
   ctx.textAlign = "left";
-  ctx.fillText("0°", ax, ay + ah + 13);
+  ctx.fillText("0°", ax, ay + ah + 16);
   ctx.textAlign = "center";
-  ctx.fillText("90°", ax + aw / 2, ay + ah + 13);
+  ctx.fillText("90°", ax + aw / 2, ay + ah + 16);
   ctx.textAlign = "right";
-  ctx.fillText("180°", ax + aw, ay + ah + 13);
+  ctx.fillText("180°", ax + aw, ay + ah + 16);
 }
 
 function mousePressed() {
@@ -638,15 +637,18 @@ function setupUIEventListeners() {
     let groupRate = document.getElementById("group-rate");
     let groupEnergy = document.getElementById("group-energy");
     let playPauseBtn = document.getElementById("ui-btn-playpause");
+    let emissionHint = document.getElementById("emission-hint");
     if (currentTrigger === "click") {
       hasClickedInManualMode = false;
       if (groupRate) groupRate.style.display = "none";
       if (groupEnergy) groupEnergy.style.gridColumn = "span 2";
       if (playPauseBtn) { playPauseBtn.disabled = true; isContinuousPlaying = false; }
+      if (emissionHint) emissionHint.innerText = "Haz clic en la zona del cañón para disparar cada partícula.";
     } else {
       if (groupRate) groupRate.style.display = "block";
       if (groupEnergy) groupEnergy.style.gridColumn = "span 1";
       if (playPauseBtn) playPauseBtn.disabled = false;
+      if (emissionHint) emissionHint.innerText = "Pulsa ▶ Play para lanzar partículas en lluvia continua.";
     }
     let playSpan = playPauseBtn.querySelector("span");
     if(playSpan) playSpan.innerText = "Play";
@@ -741,15 +743,35 @@ function setupAppearanceEventListeners() {
     if (card) card.addEventListener("click", (e) => { e.stopPropagation(); });
     document.addEventListener("click", () => { container.classList.remove("is-active"); });
   }
-  // Inicializa data-theme desde el valor actual del selector (evita desfase al cargar)
+  // El tema y el tamaño de interfaz ya fueron aplicados a <html> por el script
+  // inline (antes de crear el lienzo). Aquí solo sincronizamos los selectores,
+  // persistimos los cambios y reaccionamos a ellos.
+  let root = document.documentElement;
+
   let themeSelect = document.getElementById("ui-theme-select");
-  uiCache.theme = themeSelect ? themeSelect.value : "dark";
-  document.documentElement.setAttribute("data-theme", uiCache.theme);
-  themeSelect.addEventListener("change", (e) => {
+  let curTheme = root.getAttribute("data-theme") || "dark";
+  if (themeSelect) themeSelect.value = curTheme;
+  uiCache.theme = curTheme;
+  if (themeSelect) themeSelect.addEventListener("change", (e) => {
     uiCache.theme = e.target.value;
-    document.documentElement.setAttribute("data-theme", e.target.value);
+    root.setAttribute("data-theme", e.target.value);
+    try { localStorage.setItem("sim-ui-theme", e.target.value); } catch (err) {}
     updateSidebarHistogram();
   });
+
+  // Tamaño de interfaz: "compact" (ordenador) o "touch" (tablet/pizarra).
+  // Al cambiar varía el ancho del panel, así que reajustamos el lienzo p5.
+  let densitySelect = document.getElementById("ui-density-select");
+  let curDensity = root.getAttribute("data-ui") || "compact";
+  if (densitySelect) {
+    densitySelect.value = curDensity;
+    densitySelect.addEventListener("change", (e) => {
+      root.setAttribute("data-ui", e.target.value);
+      try { localStorage.setItem("sim-ui-density", e.target.value); } catch (err) {}
+      windowResized();
+      updateSidebarHistogram();
+    });
+  }
   document.getElementById("ui-radius-electron").addEventListener("input", (e) => {
     document.getElementById("electron-radius-val").innerText = e.target.value + " px";
     refreshColorCache();
