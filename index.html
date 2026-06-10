@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -180,7 +180,12 @@
     .collapsible-trigger-title { border-left: 3px solid #2563eb; padding-left: 6px; color: var(--text-muted); }
     .collapsible-arrow { font-size: 9px; color: var(--text-muted); transition: transform 0.2s ease; }
     .collapsible-content { max-height: 0; overflow: hidden; padding: 0 12px; transition: max-height 0.23s cubic-bezier(0.4, 0, 0.2, 1), padding 0.23s ease; }
-    .collapsible-card.is-expanded .collapsible-content { max-height: 200px; padding-bottom: 12px; }
+    .collapsible-card.is-expanded .collapsible-content { max-height: 240px; padding-bottom: 12px; }
+    #ui-panel-info.is-expanded .collapsible-content { max-height: 420px; }
+    .info-block { margin-bottom: 9px; }
+    .info-block:last-child { margin-bottom: 0; }
+    .info-label { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: #2563eb; margin-bottom: 3px; }
+    .info-text { font-size: 11px; line-height: 1.55; color: var(--text-label); }
     .collapsible-card.is-expanded .collapsible-arrow { transform: rotate(180deg); }
 
     .stat-row { display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; margin-bottom: 6px; color: var(--text-label); }
@@ -192,7 +197,7 @@
     .canvas-area { position: relative; width: 100%; height: 100%; background-color: var(--bg-input); border-radius: 8px; border: 1px solid var(--border-canvas); overflow: hidden; }
     #canvas-holder { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; }
 
-    .manual-hint-banner { position: absolute; top: 14px; left: 14px; background-color: rgba(37, 99, 235, 0.9); color: #ffffff; padding: 8px 14px; font-size: 12px; font-weight: 600; border-radius: 6px; z-index: 90; pointer-events: none; box-shadow: 0 4px 12px rgba(0,0,0,0.25); transition: opacity 0.2s ease; }
+    .manual-hint-banner { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); background-color: rgba(37, 99, 235, 0.92); color: #ffffff; padding: 8px 16px; font-size: 12px; font-weight: 600; border-radius: 6px; z-index: 90; pointer-events: none; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: opacity 0.2s ease; white-space: nowrap; display: flex; align-items: center; gap: 8px; }
 
     .theme-dropdown-container { position: absolute; top: 14px; right: 14px; z-index: 100; }
     .dropdown-gear-btn { background-color: var(--bg-card); border: 1px solid var(--border-main); color: var(--text-main); width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
@@ -201,6 +206,16 @@
     .color-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 11px; }
     .color-picker-input { width: 20px; height: 20px; border: none; cursor: pointer; background: none; -webkit-appearance: none; appearance: none; }
     .color-picker-input::-webkit-color-swatch { border: 1px solid var(--border-main); border-radius: 50%; }
+    .toggle-input { width: 16px; height: 16px; cursor: pointer; accent-color: #2563eb; }
+
+    .histogram-tooltip {
+      position: fixed; z-index: 200; display: none; pointer-events: none;
+      background-color: var(--bg-card); border: 1px solid var(--border-main);
+      color: var(--text-main); padding: 6px 9px; border-radius: 6px;
+      font-size: 11px; line-height: 1.5; font-family: monospace; text-align: center;
+      white-space: nowrap; box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+    }
+    .histogram-tooltip .tt-pct { color: #2563eb; font-weight: bold; }
 
     .btn-container { margin-top: auto; padding-bottom: 2px; flex-shrink: 0; }
   </style>
@@ -209,7 +224,34 @@
 
   <div class="simulation-container">
     <div class="control-panel">
-      
+
+      <div class="collapsible-card" id="ui-panel-info">
+        <button class="collapsible-trigger" id="ui-info-trigger">
+          <span class="collapsible-trigger-title">Contexto Experimental</span>
+          <span class="collapsible-arrow">▼</span>
+        </button>
+        <div class="collapsible-content">
+          <div class="info-block">
+            <div class="info-label">¿Qué se simula?</div>
+            <p class="info-text">Partículas alfa (núcleo de He-4: 2p&nbsp;+&nbsp;2n) son lanzadas contra una lámina metálica ultradelgada. El ángulo de desviación revela cómo está distribuida la carga eléctrica dentro del átomo.</p>
+          </div>
+          <div class="info-block">
+            <div class="info-label">Modelos atómicos</div>
+            <p class="info-text"><strong>Thomson</strong> (budín de pasas): carga positiva difusa por toda la esfera → deflexiones pequeñas, siempre &lt;&nbsp;5°.<br>
+            <strong>Rutherford</strong> (nuclear): carga concentrada en un núcleo diminuto → la mayoría pasan rectas, pero unas pocas rebotan casi 180°.</p>
+          </div>
+          <div class="info-block">
+            <div class="info-label">Modos de visualización</div>
+            <p class="info-text"><strong>Átomo</strong>: sigue partículas individuales e inspecciona la trayectoria.<br>
+            <strong>Lámina</strong>: acumula estadística de dispersión a través de muchos átomos.</p>
+          </div>
+          <div class="info-block">
+            <div class="info-label">Histograma angular</div>
+            <p class="info-text">Distribución de partículas detectadas por ángulo (0°–180°). La diferencia entre modelos en los ángulos grandes es la prueba experimental que llevó al descubrimiento del núcleo atómico.</p>
+          </div>
+        </div>
+      </div>
+
       <div class="control-card">
         <h2>Paradigma Atómico</h2>
         <div class="grid-2col control-group">
@@ -240,7 +282,7 @@
         
         <div class="control-group">
           <label>Carga (Z) <span class="data-readout" id="z-val">14</span></label>
-          <input type="range" id="ui-z-slider" min="1" max="100" value="14">
+          <input type="range" id="ui-z-slider" min="1" max="118" value="14">
         </div>
       </div>
 
@@ -275,28 +317,13 @@
         </div>
       </div>
 
-      <div class="collapsible-card" id="ui-panel-stats">
-        <button class="collapsible-trigger" id="ui-stats-trigger">
-          <span class="collapsible-trigger-title">Datos Estadísticos</span>
+      <div class="collapsible-card is-expanded" id="ui-panel-histogram">
+        <button class="collapsible-trigger" id="ui-histogram-trigger">
+          <span class="collapsible-trigger-title">Distribución Angular</span>
           <span class="collapsible-arrow">▼</span>
         </button>
         <div class="collapsible-content">
-          <div class="stat-row">
-            <span>Proyectiles Emitidos:</span>
-            <span class="stat-val" id="stat-total" style="color: var(--text-main);">0</span>
-          </div>
-          <div class="stat-row">
-            <span>Sin Desviación (&lt;1°):</span>
-            <span class="stat-val" id="stat-straight">0%</span>
-          </div>
-          <div class="stat-row">
-            <span>Dispersados (1° - 90°):</span>
-            <span class="stat-val amber" id="stat-deviated">0%</span>
-          </div>
-          <div class="stat-row">
-            <span>Retrodispersión (&gt;90°):</span>
-            <span class="stat-val red" id="stat-rebound">0%</span>
-          </div>
+          <canvas id="histogram-canvas" height="150" style="width:100%;display:block;"></canvas>
         </div>
       </div>
 
@@ -306,9 +333,7 @@
     </div>
 
     <div class="canvas-area">
-      <div id="ui-manual-hint" class="manual-hint-banner">
-        Haz clic en la banda azul de la izquierda para lanzar proyectiles a diferentes alturas
-      </div>
+      <div id="ui-manual-hint" class="manual-hint-banner" style="display:none;"></div>
 
       <div class="theme-dropdown-container" id="ui-dropdown-container">
         <button class="dropdown-gear-btn" id="ui-dropdown-trigger">
@@ -332,13 +357,15 @@
           <h3>Paleta</h3>
           <div class="color-row"><label>Partícula Alfa</label><input type="color" id="ui-color-alpha" class="color-picker-input" value="#00ff00"></div>
           <div class="color-row"><label>Protones</label><input type="color" id="ui-color-proton" class="color-picker-input" value="#ff0000"></div>
-          <div class="color-row"><label>Neutrones</label><input type="color" id="ui-color-neutron" class="color-picker-input" value="#ffffff"></div>
+          <div class="color-row"><label>Neutrones</label><input type="color" id="ui-color-neutron" class="color-picker-input" value="#aaaaaa"></div>
           <div class="color-row"><label>Electrones</label><input type="color" id="ui-color-electron" class="color-picker-input" value="#00a0ff"></div>
         </div>
       </div>
       <div id="canvas-holder"></div>
     </div>
   </div>
+
+  <div id="histogram-tooltip" class="histogram-tooltip"></div>
 
   <script src="js/ThomsonTarget.js"></script>
   <script src="js/AlphaParticle.js"></script>
