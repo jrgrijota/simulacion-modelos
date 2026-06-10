@@ -186,12 +186,28 @@ function draw() {
 
 }
 
-// Nombres de elementos más comunes (Z 1–36 + algunos relevantes).
+// Tabla completa de elementos Z 1–118 en español.
 const ELEMENT_NAMES = {
-  1:"H", 2:"He", 3:"Li", 4:"Be", 5:"B", 6:"C", 7:"N", 8:"O", 9:"F", 10:"Ne",
-  11:"Na", 12:"Mg", 13:"Al", 14:"Si", 15:"P", 16:"S", 17:"Cl", 18:"Ar",
-  19:"K", 20:"Ca", 26:"Fe", 27:"Co", 28:"Ni", 29:"Cu", 30:"Zn",
-  47:"Ag", 50:"Sn", 79:"Au", 82:"Pb", 92:"U"
+  1:"Hidrógeno",2:"Helio",3:"Litio",4:"Berilio",5:"Boro",6:"Carbono",7:"Nitrógeno",
+  8:"Oxígeno",9:"Flúor",10:"Neón",11:"Sodio",12:"Magnesio",13:"Aluminio",14:"Silicio",
+  15:"Fósforo",16:"Azufre",17:"Cloro",18:"Argón",19:"Potasio",20:"Calcio",
+  21:"Escandio",22:"Titanio",23:"Vanadio",24:"Cromo",25:"Manganeso",26:"Hierro",
+  27:"Cobalto",28:"Níquel",29:"Cobre",30:"Zinc",31:"Galio",32:"Germanio",
+  33:"Arsénico",34:"Selenio",35:"Bromo",36:"Criptón",37:"Rubidio",38:"Estroncio",
+  39:"Itrio",40:"Circonio",41:"Niobio",42:"Molibdeno",43:"Tecnecio",44:"Rutenio",
+  45:"Rodio",46:"Paladio",47:"Plata",48:"Cadmio",49:"Indio",50:"Estaño",
+  51:"Antimonio",52:"Teluro",53:"Yodo",54:"Xenón",55:"Cesio",56:"Bario",
+  57:"Lantano",58:"Cerio",59:"Praseodimio",60:"Neodimio",61:"Prometio",62:"Samario",
+  63:"Europio",64:"Gadolinio",65:"Terbio",66:"Disprosio",67:"Holmio",68:"Erbio",
+  69:"Tulio",70:"Iterbio",71:"Lutecio",72:"Hafnio",73:"Tántalo",74:"Wolframio",
+  75:"Renio",76:"Osmio",77:"Iridio",78:"Platino",79:"Oro",80:"Mercurio",
+  81:"Talio",82:"Plomo",83:"Bismuto",84:"Polonio",85:"Ástato",86:"Radón",
+  87:"Francio",88:"Radio",89:"Actinio",90:"Torio",91:"Protactinio",92:"Uranio",
+  93:"Neptunio",94:"Plutonio",95:"Americio",96:"Curio",97:"Berkelio",98:"Californio",
+  99:"Einstenio",100:"Fermio",101:"Mendelevio",102:"Nobelio",103:"Laurencio",
+  104:"Rutherfordio",105:"Dubnio",106:"Seaborgio",107:"Bohrio",108:"Hasio",
+  109:"Meitnerio",110:"Darmstadtio",111:"Roentgenio",112:"Copernicio",113:"Nihonio",
+  114:"Flerovio",115:"Moscovio",116:"Livermorio",117:"Teneso",118:"Oganesón"
 };
 
 // Anotación didáctica superpuesta al átomo en modo átomo aislado.
@@ -203,9 +219,8 @@ function drawAtomLabel(themeMode, atom) {
   let cy = atom.pos.y;
   let edgeY = cy - atom.R - 8;
   let labelY = edgeY - 22;
-  let sym = ELEMENT_NAMES[atom.Z] ? ELEMENT_NAMES[atom.Z] : "Z=" + atom.Z;
-  let modelName = atom.model === "rutherford" ? "Rutherford" : "Thomson";
-  let labelText = "Átomo de " + sym + "  ·  Modelo " + modelName;
+  let nombre = ELEMENT_NAMES[atom.Z] ? ELEMENT_NAMES[atom.Z] : "Z=" + atom.Z;
+  let labelText = "Átomo de " + nombre;
 
   push();
   textSize(11.5);
@@ -402,25 +417,27 @@ function buildEnvironment() {
   singleAtom = new ThomsonTarget(width / 2, height / 2, 190, z, false, currentModel);
   foilAtoms = [];
   
-  let atomRadius = 14; 
-  let atomDiameter = atomRadius * 2; 
+  let atomRadius = 14;
+  const FOIL_VISUAL_SCALE = 0.6;
+  // El paso de la rejilla usa el diámetro visual para que los átomos se toquen,
+  // mientras que el radio de física (atomRadius) se mantiene para el potencial.
+  let step = Math.round(atomRadius * 2 * FOIL_VISUAL_SCALE); // 16 px
   let lSlider = document.getElementById("ui-layers-slider");
   let numColumnas = lSlider ? parseInt(lSlider.value) : 3;
-  let totalFoilWidth = (numColumnas - 1) * atomDiameter;
+  let totalFoilWidth = (numColumnas - 1) * step;
   let startX = (width / 2) - (totalFoilWidth / 2);
 
-  // La lámina se centra verticalmente y se limita a una altura menor que el radio
-  // del detector, de modo que no se solape con el arco (las "paredes") del detector.
+  // Centrado vertical dentro del 60 % del radio del detector para no tocar el arco.
   let foilHalfHeight = detectorRadius * 0.6;
-  let numFilas = Math.max(1, Math.floor((foilHalfHeight * 2) / atomDiameter));
-  let usedHeight = (numFilas - 1) * atomDiameter;
+  let numFilas = Math.max(1, Math.floor((foilHalfHeight * 2) / step));
+  let usedHeight = (numFilas - 1) * step;
   let startY = (height / 2) - (usedHeight / 2);
 
   for (let col = 0; col < numColumnas; col++) {
-    let x = startX + col * atomDiameter;
+    let x = startX + col * step;
     for (let fila = 0; fila < numFilas; fila++) {
-      let y = startY + fila * atomDiameter;
-      foilAtoms.push(new ThomsonTarget(x, y, atomRadius, z, true, currentModel, 0.6));
+      let y = startY + fila * step;
+      foilAtoms.push(new ThomsonTarget(x, y, atomRadius, z, true, currentModel, FOIL_VISUAL_SCALE));
     }
   }
 }

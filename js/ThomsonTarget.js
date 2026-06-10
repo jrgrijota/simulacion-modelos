@@ -119,6 +119,17 @@ class ThomsonTarget {
     }
   }
 
+  // Devuelve los radios únicos de órbita a partir de los electrones del átomo.
+  getOrbitRadii() {
+    let radii = [];
+    for (let e of this.electrons) {
+      let found = false;
+      for (let r of radii) { if (Math.abs(r - e.rLayer) < 0.5) { found = true; break; } }
+      if (!found) radii.push(e.rLayer);
+    }
+    return radii.sort((a, b) => a - b);
+  }
+
   updateElectrons() {
     this.orbitAngle += 0.015;
     for (let e of this.electrons) {
@@ -270,6 +281,14 @@ class ThomsonTarget {
         stroke(255, 190, 0, theme === "light" ? 60 : 40);
         strokeWeight(1);
         ellipse(this.pos.x, this.pos.y, this.R * 2, this.R * 2);
+        // Órbitas de los anillos de electrones
+        drawingContext.save();
+        drawingContext.setLineDash([5, 7]);
+        stroke(theme === "light" ? color(180, 140, 20, 90) : color(255, 200, 50, 55));
+        strokeWeight(0.7);
+        noFill();
+        for (let r of this.getOrbitRadii()) ellipse(this.pos.x, this.pos.y, r * 2, r * 2);
+        drawingContext.restore();
       } else {
         if (theme === "light") {
           fill(255, 190, 0, 45);   
@@ -287,7 +306,15 @@ class ThomsonTarget {
         strokeWeight(0.5);
         noFill();
         ellipse(this.pos.x, this.pos.y, this.R * 2, this.R * 2);
-        
+        // Órbitas de capas electrónicas (Bohr)
+        drawingContext.save();
+        drawingContext.setLineDash([5, 7]);
+        stroke(theme === "light" ? color(60, 100, 200, 70) : color(100, 160, 255, 55));
+        strokeWeight(0.7);
+        noFill();
+        for (let r of this.getOrbitRadii()) ellipse(this.pos.x, this.pos.y, r * 2, r * 2);
+        drawingContext.restore();
+
         noStroke();
         for (let nuc of this.nucleons) {
           fill(nuc.type === "proton" ? protonColor : neutronColor);
