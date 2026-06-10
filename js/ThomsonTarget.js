@@ -128,17 +128,14 @@ class ThomsonTarget {
 
   // OPTIMIZACIÓN DE COLISIONES: Sin instanciación de vectores, evaluación primaria mediante cuadrados
   checkElectronCollisions(alpha) {
-    let isFoil = (typeof currentMode !== 'undefined' && currentMode === "foil");
-    let scaleFactor = isFoil ? (1.0 / 30.0) : 1.0;
-    
     for (let e of this.electrons) {
       if (e.isEjected) continue;
-      
+
       let dx = alpha.pos.x - e.pos.x;
       let dy = alpha.pos.y - e.pos.y;
       let dSq = dx * dx + dy * dy;
-      
-      let threshold = (alpha.physicsRadius + e.physicsRadius) * scaleFactor;
+
+      let threshold = alpha.physicsRadius + e.physicsRadius;
       let thresholdSq = threshold * threshold;
       
       if (dSq < thresholdSq && dSq > 0) {
@@ -170,10 +167,11 @@ class ThomsonTarget {
     let rSq = dx * dx + dy * dy;
     let r = Math.sqrt(rSq);
 
-    let isFoil = (typeof currentMode !== 'undefined' && currentMode === "foil");
-    let screeningLength = isFoil ? this.R * 0.4 : this.R * 1.2;
-    
-    if (r > screeningLength && isFoil) return { x: 0, y: 0 }; 
+    // Longitud de apantallamiento: propiedad física del átomo, independiente del modo de visualización.
+    // Equivale al radio de Debye en escala de simulación.
+    let screeningLength = this.R * 1.2;
+
+    if (r > screeningLength) return { x: 0, y: 0 };
 
     let nx = r > 0 ? dx / r : 0;
     let ny = r > 0 ? dy / r : 0;
@@ -181,8 +179,9 @@ class ThomsonTarget {
     if (this.model === "thomson") {
       let fMag = 0;
       if (r < this.R) {
+        // Ley de Gauss: carga encerrada ∝ r³/R³ → fuerza repulsiva ∝ r (lineal dentro de la esfera)
         let qEncl = this.Z * (r * r * r) / (this.R * this.R * this.R);
-        fMag = (this.ke * 2.0 * qEncl) / (rSq + 1.0); 
+        fMag = (this.ke * 2.0 * qEncl) / (rSq + 1.0);
       } else {
         fMag = (this.ke * 2.0 * this.Z) / (rSq + 1.0);
       }
@@ -205,10 +204,12 @@ class ThomsonTarget {
         }
       }
     } else {
+      // Rutherford: potencial de Yukawa (Coulomb + apantallamiento Thomas-Fermi).
+      // El núcleo duro (softening = coreRadius²) evita divergencias sin cap artificial,
+      // dando una curva de fuerza continua y diferenciable en todo r.
+      let coreSq = this.coreRadius * this.coreRadius;
       let factorAtenuacion = Math.exp(-r / screeningLength);
-      let fMag = ((this.ke * 2.0 * this.Z) / (rSq + 0.1)) * factorAtenuacion;
-      
-      if (fMag > 90000) fMag = 90000; 
+      let fMag = ((this.ke * 2.0 * this.Z) / (rSq + coreSq)) * factorAtenuacion;
       fx += nx * fMag;
       fy += ny * fMag;
     }
