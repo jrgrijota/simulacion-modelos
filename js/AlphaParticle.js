@@ -10,6 +10,7 @@ class AlphaParticle {
     
     this.history = [];
     this.isDead = false;
+    this.hasEnteredDetector = false;
     this.deviationAngle = 0;
     this.hasBeenCounted = false;
 
@@ -45,8 +46,12 @@ class AlphaParticle {
       this.vel.y += this.acc.y * subDt;
     }
 
-    let heading = Math.atan2(this.vel.y, this.vel.x);
-    this.deviationAngle = Math.abs(heading * (180 / Math.PI));
+    // Ángulo de desviación respecto a la dirección inicial (+x): 0°=recto, 180°=retrodispersión
+    let vLen = Math.sqrt(this.vel.x * this.vel.x + this.vel.y * this.vel.y);
+    if (vLen > 0) {
+      let cosTheta = Math.max(-1, Math.min(1, this.vel.x / vLen));
+      this.deviationAngle = Math.acos(cosTheta) * (180 / Math.PI);
+    }
     
     let amt = constrain(this.deviationAngle / 35.0, 0, 1);
     let colorInput = document.getElementById("ui-color-alpha");

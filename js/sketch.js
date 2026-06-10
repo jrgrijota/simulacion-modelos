@@ -7,8 +7,8 @@ let currentMode = "atom";
 let currentTrigger = "click"; 
 let currentModel = "thomson"; 
 
-let detectorX = 780; // Se recalcula al tamaño real del canvas en setup()/windowResized()
-let spawnX = 25;
+let detectorRadius = 300; // Se recalcula en setup()/windowResized()
+const OPENING_HALF_ANGLE_DEG = 20; // semiapertura del detector en grados
 
 let statTotal = 0;
 let statStraight = 0;
@@ -30,8 +30,7 @@ function setup() {
   let h = holder && holder.offsetHeight ? holder.offsetHeight : 686;
   let canvas = createCanvas(w, h);
   canvas.parent("canvas-holder");
-  detectorX = width - 90;
-
+  detectorRadius = Math.min(width, height) * 0.42;
   setupAppearanceEventListeners();
   setupUIEventListeners();
   buildEnvironment();
@@ -43,7 +42,7 @@ function windowResized() {
   let holder = document.getElementById("canvas-holder");
   if (!holder) return;
   resizeCanvas(holder.offsetWidth, holder.offsetHeight);
-  detectorX = width - 90;
+  detectorRadius = Math.min(width, height) * 0.42;
   buildEnvironment();
 }
 
@@ -53,27 +52,46 @@ function draw() {
   
   background(themeMode === "light" ? [248, 250, 252] : [11, 12, 16]);
   
+  // Geometría del detector circular (apertura en el lado izquierdo, ángulo PI)
+  let openAngleRad = OPENING_HALF_ANGLE_DEG * (PI / 180.0);
+  let openHH = detectorRadius * Math.sin(openAngleRad);
+  let openX = width / 2 - detectorRadius; // borde izquierdo de la apertura
+
+  // Arco detector — cubre todo menos la apertura izquierda (PI ± openAngleRad)
+  stroke(themeMode === "light" ? color(150, 170, 200) : color(50, 70, 110));
+  strokeWeight(2.5);
+  noFill();
+  arc(width / 2, height / 2, detectorRadius * 2, detectorRadius * 2,
+      PI + openAngleRad, PI * 3 - openAngleRad, OPEN);
+
+  // Etiqueta del detector en la parte superior del arco
+  noStroke();
+  textSize(10);
+  textAlign(CENTER, BOTTOM);
+  fill(themeMode === "light" ? color(100, 116, 139) : color(100, 116, 139, 200));
+  text("Detector de Geiger-Marsden", width / 2, height / 2 - detectorRadius - 5);
+
+  // Zona de lanzamiento (apertura izquierda) en modo manual
   if (currentTrigger === "click") {
     noStroke();
-    fill(0, 160, 255, themeMode === "light" ? 14 : 20); 
-    rect(0, 0, spawnX + 15, height);
+    fill(0, 160, 255, themeMode === "light" ? 14 : 20);
+    rect(0, height / 2 - openHH, openX + 25, openHH * 2, 4);
     stroke(0, 160, 255, themeMode === "light" ? 40 : 55);
     strokeWeight(1);
-    for (let y = 0; y < height; y += 10) line(spawnX + 15, y, spawnX + 15, y + 5);
+    for (let y = height / 2 - openHH; y < height / 2 + openHH; y += 10) {
+      line(openX, y, openX, y + 5);
+    }
   }
-
-  stroke(themeMode === "light" ? color(203, 213, 225) : color(30, 41, 59));
-  strokeWeight(4);
-  line(detectorX, 0, detectorX, height);
 
   if (currentTrigger === "continuous" && isContinuousPlaying) {
     let rSlider = document.getElementById("ui-rate-slider");
     let rate = rSlider ? parseInt(rSlider.value) : 20;
     if (random(0, 1) < (rate / 60.0)) {
-      let spawnY = random(40, height - 40); 
+      let openHHc = detectorRadius * Math.sin(OPENING_HALF_ANGLE_DEG * Math.PI / 180.0);
+      let spawnY = random(height / 2 - openHHc, height / 2 + openHHc);
       let sSlider = document.getElementById("ui-speed-slider");
       let v0 = sSlider ? parseFloat(sSlider.value) : 10.0;
-      alphas.push(new AlphaParticle(spawnX, spawnY, v0, 0));
+      alphas.push(new AlphaParticle(width / 2 - detectorRadius, spawnY, v0, 0));
       statTotal++;
     }
   }
@@ -134,25 +152,27 @@ function draw() {
     a.integrate(1.0, targetAtom);
     a.display();
 
-    if (!a.isDead && a.pos.x >= detectorX) {
+    let adx = a.pos.x - width / 2, ady = a.pos.y - height / 2;
+    let adist = Math.sqrt(adx * adx + ady * ady);
+
+    if (!a.hasEnteredDetector && adist < detectorRadius * 0.85) {
+      a.hasEnteredDetector = true;
+    }
+
+    if (!a.isDead && a.hasEnteredDetector && adist >= detectorRadius) {
       a.isDead = true;
-      a.pos.x = detectorX; 
-      deadImpacts.push({ x: a.pos.x, y: a.pos.y, color: a.particleColor });
-      
+      let ux = adx / adist, uy = ady / adist;
+      deadImpacts.push({ x: width / 2 + ux * detectorRadius, y: height / 2 + uy * detectorRadius, color: a.particleColor });
       if (!a.hasBeenCounted) {
         a.hasBeenCounted = true;
         recordScattering(a.deviationAngle);
       }
-      if (deadImpacts.length > 40) deadImpacts.shift(); 
+      if (deadImpacts.length > 40) deadImpacts.shift();
       alphas.splice(i, 1);
       continue;
     }
 
-    if (a.pos.x < -10 || a.pos.y < -50 || a.pos.y > height + 50) {
-      if (a.pos.x < -10 && !a.hasBeenCounted) {
-        a.hasBeenCounted = true;
-        recordScattering(a.deviationAngle);
-      }
+    if (adist > detectorRadius * 1.5) {
       alphas.splice(i, 1);
     }
   }
@@ -243,14 +263,17 @@ function updateSidebarHistogram() {
 }
 
 function mousePressed() {
-  if (currentTrigger === "click" && mouseX >= 0 && mouseX <= spawnX + 15 && mouseY >= 0 && mouseY <= height) {
+  let openHHm = detectorRadius * Math.sin(OPENING_HALF_ANGLE_DEG * Math.PI / 180.0);
+  let clickX = width / 2 - detectorRadius;
+  if (currentTrigger === "click" && mouseX >= 0 && mouseX <= clickX + 30 &&
+      mouseY >= height / 2 - openHHm && mouseY <= height / 2 + openHHm) {
     if (!hasClickedInManualMode) {
       hasClickedInManualMode = true;
       updateManualHintVisibility();
     }
     let sSlider = document.getElementById("ui-speed-slider");
     let v0 = sSlider ? parseFloat(sSlider.value) : 10.0;
-    alphas.push(new AlphaParticle(spawnX, mouseY, v0, 0));
+    alphas.push(new AlphaParticle(clickX, mouseY, v0, 0));
     statTotal++;
     updateSidebarHistogram();
   }
@@ -267,7 +290,7 @@ function buildEnvironment() {
   let lSlider = document.getElementById("ui-layers-slider");
   let numColumnas = lSlider ? parseInt(lSlider.value) : 3;
   let totalFoilWidth = (numColumnas - 1) * atomDiameter;
-  let startX = (width / 2) - (totalFoilWidth / 2) - 40; 
+  let startX = (width / 2) - (totalFoilWidth / 2);
   
   for (let col = 0; col < numColumnas; col++) {
     let x = startX + col * atomDiameter; 
