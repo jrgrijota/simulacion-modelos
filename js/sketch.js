@@ -7,27 +7,44 @@ let currentMode = "atom";
 let currentTrigger = "click"; 
 let currentModel = "thomson"; 
 
-let canvasWidth = 870;
-let canvasHeight = 686;
-let detectorX = 780; 
-let spawnX = 25; 
+let detectorX = 780; // Se recalcula al tamaño real del canvas en setup()/windowResized()
+let spawnX = 25;
 
 let statTotal = 0;
 let statStraight = 0;
 let statDeviated = 0;
 let statRebound = 0;
 
+// Histograma de distribución angular: 18 contenedores de 10° (0°–180°).
+// Es el dato experimental clave del experimento de Geiger-Marsden.
+let angleBins = new Array(18).fill(0);
+
 let hasClickedInManualMode = false;
-let isContinuousPlaying = false; 
+let isContinuousPlaying = false;
 
 function setup() {
-  let canvas = createCanvas(canvasWidth, canvasHeight);
+  // El canvas se ajusta al tamaño real de su contenedor para que nada quede
+  // recortado (antes era fijo 870x686 y se cortaba en pantallas más bajas).
+  let holder = document.getElementById("canvas-holder");
+  let w = holder && holder.offsetWidth ? holder.offsetWidth : 870;
+  let h = holder && holder.offsetHeight ? holder.offsetHeight : 686;
+  let canvas = createCanvas(w, h);
   canvas.parent("canvas-holder");
+  detectorX = width - 90;
 
   setupAppearanceEventListeners();
   setupUIEventListeners();
   buildEnvironment();
   updateManualHintVisibility();
+}
+
+// Reajusta el canvas y reconstruye el escenario cuando cambia el tamaño de la ventana.
+function windowResized() {
+  let holder = document.getElementById("canvas-holder");
+  if (!holder) return;
+  resizeCanvas(holder.offsetWidth, holder.offsetHeight);
+  detectorX = width - 90;
+  buildEnvironment();
 }
 
 function draw() {
@@ -124,11 +141,7 @@ function draw() {
       
       if (!a.hasBeenCounted) {
         a.hasBeenCounted = true;
-        let finalAngle = a.deviationAngle; 
-        if (finalAngle < 1.0) statStraight++;
-        else if (finalAngle >= 1.0 && finalAngle <= 90.0) statDeviated++;
-        else statRebound++;
-        updateTelemetryUI();
+        recordScattering(a.deviationAngle);
       }
       if (deadImpacts.length > 40) deadImpacts.shift(); 
       alphas.splice(i, 1);
@@ -138,12 +151,95 @@ function draw() {
     if (a.pos.x < -10 || a.pos.y < -50 || a.pos.y > height + 50) {
       if (a.pos.x < -10 && !a.hasBeenCounted) {
         a.hasBeenCounted = true;
-        statRebound++;
-        updateTelemetryUI();
+        recordScattering(a.deviationAngle);
       }
       alphas.splice(i, 1);
     }
   }
+
+}
+
+// Clasifica un proyectil ya detectado: actualiza estadísticas y el histograma angular.
+function recordScattering(angleDeg) {
+  if (angleDeg < 1.0) statStraight++;
+  else if (angleDeg <= 90.0) statDeviated++;
+  else statRebound++;
+
+  let binWidth = 180.0 / angleBins.length;
+  let bin = Math.floor(angleDeg / binWidth);
+  if (bin < 0) bin = 0;
+  if (bin >= angleBins.length) bin = angleBins.length - 1;
+  angleBins[bin]++;
+
+  updateSidebarHistogram();
+}
+
+function updateSidebarHistogram() {
+  let hCanvas = document.getElementById("histogram-canvas");
+  if (!hCanvas) return;
+
+  let tInput = document.getElementById("ui-theme-select");
+  let dark = !tInput || tInput.value !== "light";
+
+  let W = hCanvas.offsetWidth || 240;
+  hCanvas.width = W;
+  let H = hCanvas.height;
+
+  let ctx = hCanvas.getContext("2d");
+  ctx.clearRect(0, 0, W, H);
+
+  let padL = 8, padR = 8, padTop = 20, padBot = 18;
+  let aw = W - padL - padR;
+  let ah = H - padTop - padBot;
+  let ax = padL, ay = padTop;
+  let nBins = angleBins.length;
+  let barW = aw / nBins;
+
+  let maxBin = 1;
+  for (let c of angleBins) if (c > maxBin) maxBin = c;
+
+  // Encabezado: título y contador total
+  ctx.font = "bold 10px sans-serif";
+  ctx.fillStyle = dark ? "rgba(148,163,184,1)" : "rgba(71,85,105,1)";
+  ctx.textAlign = "left";
+  ctx.fillText("ÁNGULO DE DISPERSIÓN", ax, 14);
+  ctx.font = "10px monospace";
+  ctx.textAlign = "right";
+  ctx.fillStyle = dark ? "rgba(100,120,160,1)" : "rgba(100,116,139,1)";
+  ctx.fillText("n=" + statTotal, W - padR, 14);
+
+  // Eje base
+  ctx.strokeStyle = dark ? "rgba(80,88,110,1)" : "rgba(148,163,184,1)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(ax, ay + ah);
+  ctx.lineTo(ax + aw, ay + ah);
+  ctx.stroke();
+
+  // Barras
+  for (let i = 0; i < nBins; i++) {
+    let angleMid = (i + 0.5) * (180.0 / nBins);
+    let h = (angleBins[i] / maxBin) * ah;
+    if (i === 0) ctx.fillStyle = "#00ff00";
+    else if (angleMid <= 90.0) ctx.fillStyle = "#ffb000";
+    else ctx.fillStyle = "#ff3333";
+    let bx = ax + i * barW;
+    if (h > 0) {
+      ctx.beginPath();
+      ctx.roundRect(bx + 1, ay + ah - h, barW - 2, h, 2);
+      ctx.fill();
+    }
+  }
+
+  // Etiquetas eje X
+  ctx.font = "9px sans-serif";
+  ctx.fillStyle = dark ? "rgba(120,130,155,1)" : "rgba(100,116,139,1)";
+  ctx.textAlign = "left";
+  ctx.fillText("0°", ax, ay + ah + 13);
+  ctx.textAlign = "center";
+  ctx.fillText("90°", ax + aw / 2, ay + ah + 13);
+  ctx.textAlign = "right";
+  ctx.fillText("180°", ax + aw, ay + ah + 13);
 }
 
 function mousePressed() {
@@ -156,7 +252,7 @@ function mousePressed() {
     let v0 = sSlider ? parseFloat(sSlider.value) : 10.0;
     alphas.push(new AlphaParticle(spawnX, mouseY, v0, 0));
     statTotal++;
-    updateTelemetryUI();
+    updateSidebarHistogram();
   }
 }
 
@@ -181,26 +277,10 @@ function buildEnvironment() {
   }
 }
 
-function updateTelemetryUI() {
-  let tElem = document.getElementById("stat-total");
-  let sElem = document.getElementById("stat-straight");
-  let dElem = document.getElementById("stat-deviated");
-  let rElem = document.getElementById("stat-rebound");
-  if(tElem) tElem.innerText = statTotal;
-  if (statTotal > 0) {
-    if(sElem) sElem.innerText = ((statStraight / statTotal) * 100).toFixed(1) + "%";
-    if(dElem) dElem.innerText = ((statDeviated / statTotal) * 100).toFixed(1) + "%";
-    if(rElem) rElem.innerText = ((statRebound / statTotal) * 100).toFixed(1) + "%";
-  } else {
-    if(sElem) sElem.innerText = "0%";
-    if(dElem) dElem.innerText = "0%";
-    if(rElem) rElem.innerText = "0%";
-  }
-}
-
 function resetTelemetry() {
   statTotal = 0; statStraight = 0; statDeviated = 0; statRebound = 0;
-  updateTelemetryUI();
+  angleBins.fill(0);
+  updateSidebarHistogram();
 }
 
 function updateManualHintVisibility() {
@@ -267,9 +347,10 @@ function setupUIEventListeners() {
   document.getElementById("ui-btn-reset").addEventListener("click", () => {
     alphas = []; deadImpacts = []; resetTelemetry();
   });
-  let statsCard = document.getElementById("ui-panel-stats");
-  document.getElementById("ui-stats-trigger").addEventListener("click", () => {
-    statsCard.classList.toggle("is-expanded");
+  let histCard = document.getElementById("ui-panel-histogram");
+  document.getElementById("ui-histogram-trigger").addEventListener("click", () => {
+    histCard.classList.toggle("is-expanded");
+    updateSidebarHistogram();
   });
 }
 
@@ -282,6 +363,7 @@ function setupAppearanceEventListeners() {
   }
   document.getElementById("ui-theme-select").addEventListener("change", (e) => {
     document.documentElement.setAttribute("data-theme", e.target.value);
+    updateSidebarHistogram();
   });
   document.getElementById("ui-radius-electron").addEventListener("input", (e) => {
     document.getElementById("electron-radius-val").innerText = e.target.value + " px";
