@@ -8,7 +8,47 @@ let currentTrigger = "click";
 let currentModel = "thomson"; 
 
 let detectorRadius = 300; // Se recalcula en setup()/windowResized()
-const OPENING_HALF_ANGLE_DEG = 20; // semiapertura del detector en grados
+
+// El radio del detector se maximiza dejando margen para el emisor (izq) y el borde (resto).
+// Apertura del detector = altura completa del emisor (partículas salen a cualquier altura).
+const EMITTER_H_FRAC = 0.80; // altura del emisor como fracción del canvas
+
+function computeDetectorRadius() {
+  let emitterBodyH = height * EMITTER_H_FRAC;
+  let bodyW = Math.round(emitterBodyH * 0.10);
+  return Math.min(height / 2 - 6, width / 2 - bodyW - 10);
+}
+
+function getOpenHH() {
+  return height * EMITTER_H_FRAC / 2; // = height × 0.40 — coincide con la mitad del emisor
+}
+
+// Trayectorias persistentes: se guardan al morir cada partícula alfa (solo modo átomo).
+let savedTrails = [];
+
+// Caché centralizado de valores de UI leídos desde el DOM.
+// Se reconstruye en setup() y cada vez que un control de color/radio cambia.
+// Elimina cientos de getElementById() por frame en display() e integrate().
+const uiCache = {
+  theme: "dark",
+  protonColor: null, neutronColor: null, electronColor: null,
+  electronRadius: 2.0,
+  protonR: 255, protonG: 60, protonB: 60,
+};
+
+function refreshColorCache() {
+  let el;
+  el = document.getElementById("ui-color-proton");
+  if (el) {
+    uiCache.protonColor = color(el.value);
+    uiCache.protonR = red(uiCache.protonColor);
+    uiCache.protonG = green(uiCache.protonColor);
+    uiCache.protonB = blue(uiCache.protonColor);
+  }
+  el = document.getElementById("ui-color-neutron");   if (el) uiCache.neutronColor  = color(el.value);
+  el = document.getElementById("ui-color-electron");  if (el) uiCache.electronColor = color(el.value);
+  el = document.getElementById("ui-radius-electron"); if (el) uiCache.electronRadius = parseFloat(el.value);
+}
 
 let statTotal = 0;
 let statStraight = 0;
@@ -33,11 +73,11 @@ function setup() {
   let h = holder && holder.offsetHeight ? holder.offsetHeight : 686;
   let canvas = createCanvas(w, h);
   canvas.parent("canvas-holder");
-  detectorRadius = Math.min(width, height) * 0.42;
+  detectorRadius = computeDetectorRadius();
   setupAppearanceEventListeners();
   setupUIEventListeners();
+  refreshColorCache();
   buildEnvironment();
-  updateManualHintVisibility();
 }
 
 // Reajusta el canvas y reconstruye el escenario cuando cambia el tamaño de la ventana.
@@ -45,19 +85,18 @@ function windowResized() {
   let holder = document.getElementById("canvas-holder");
   if (!holder) return;
   resizeCanvas(holder.offsetWidth, holder.offsetHeight);
-  detectorRadius = Math.min(width, height) * 0.42;
+  detectorRadius = computeDetectorRadius();
   buildEnvironment();
 }
 
 function draw() {
-  let tInput = document.getElementById("ui-theme-select");
-  let themeMode = tInput ? tInput.value : "dark";
+  let themeMode = uiCache.theme;
   
   background(themeMode === "light" ? [248, 250, 252] : [11, 12, 16]);
   
-  // Geometría del detector circular (apertura en el lado izquierdo, ángulo PI)
-  let openAngleRad = OPENING_HALF_ANGLE_DEG * (PI / 180.0);
-  let openHH = detectorRadius * Math.sin(openAngleRad);
+  // Geometría del detector circular — apertura izquierda alineada con la ranura del emisor
+  let openHH = getOpenHH();
+  let openAngleRad = Math.asin(constrain(openHH / detectorRadius, 0, 0.9999));
   let openX = width / 2 - detectorRadius; // borde izquierdo de la apertura
 
   // Arco detector — cubre todo menos la apertura izquierda (PI ± openAngleRad)
@@ -66,13 +105,7 @@ function draw() {
   noFill();
   arc(width / 2, height / 2, detectorRadius * 2, detectorRadius * 2,
       PI + openAngleRad, PI * 3 - openAngleRad, OPEN);
-
-  // Etiqueta del detector en la parte superior del arco
-  noStroke();
-  textSize(10);
-  textAlign(CENTER, BOTTOM);
-  fill(themeMode === "light" ? color(100, 116, 139) : color(100, 116, 139, 200));
-  text("Detector de Geiger-Marsden", width / 2, height / 2 - detectorRadius - 5);
+  drawDetectorLabel(themeMode);
 
   // Zona de lanzamiento (apertura izquierda) en modo manual
   if (currentTrigger === "click") {
@@ -87,14 +120,14 @@ function draw() {
   }
 
   // Fuente radiactiva: las partículas emergen de su colimador en ambos modos.
+  if (currentTrigger === "click" && !hasClickedInManualMode) drawClickHint(themeMode, openX, openHH);
   drawEmitter(themeMode, openX, openHH);
 
   if (currentTrigger === "continuous" && isContinuousPlaying) {
     let rSlider = document.getElementById("ui-rate-slider");
     let rate = rSlider ? parseInt(rSlider.value) : 20;
     if (random(0, 1) < (rate / 60.0)) {
-      let openHHc = detectorRadius * Math.sin(OPENING_HALF_ANGLE_DEG * Math.PI / 180.0);
-      let spawnY = random(height / 2 - openHHc, height / 2 + openHHc);
+      let spawnY = random(height / 2 - openHH, height / 2 + openHH);
       let sSlider = document.getElementById("ui-speed-slider");
       let v0 = sSlider ? parseFloat(sSlider.value) : 10.0;
       alphas.push(new AlphaParticle(width / 2 - detectorRadius, spawnY, v0, 0));
@@ -115,8 +148,11 @@ function draw() {
     }
   }
 
+  // Trayectorias persistentes de partículas ya detectadas (solo modo átomo)
+  drawSavedTrails();
+
   for (let imp of deadImpacts) {
-    fill(red(imp.color), green(imp.color), blue(imp.color), themeMode === "light" ? 210 : 180);
+    fill(imp.r, imp.g, imp.b, themeMode === "light" ? 210 : 180);
     ellipse(imp.x, imp.y, 5, 5);
   }
 
@@ -169,12 +205,26 @@ function draw() {
     if (!a.isDead && a.hasEnteredDetector && adist >= detectorRadius) {
       a.isDead = true;
       let ux = adx / adist, uy = ady / adist;
-      deadImpacts.push({ x: width / 2 + ux * detectorRadius, y: height / 2 + uy * detectorRadius, color: a.particleColor });
-      if (!a.hasBeenCounted) {
-        a.hasBeenCounted = true;
-        recordScattering(a.deviationAngle);
+
+      // Comprobar si la salida es por la apertura (zona sin detector).
+      // La apertura está centrada en el ángulo PI y abarca ±openAngleRad.
+      let exitAngle = Math.atan2(ady, adx); // rango (-PI, PI]
+      let inAperture = Math.abs(exitAngle) > (Math.PI - openAngleRad);
+
+      if (!inAperture) {
+        // Partícula detectada: impacto en color de los protones + recuento
+        deadImpacts.push({ x: width / 2 + ux * detectorRadius, y: height / 2 + uy * detectorRadius, r: uiCache.protonR, g: uiCache.protonG, b: uiCache.protonB });
+        if (deadImpacts.length > 40) deadImpacts.shift();
+        if (!a.hasBeenCounted) {
+          a.hasBeenCounted = true;
+          recordScattering(a.deviationAngle);
+        }
       }
-      if (deadImpacts.length > 40) deadImpacts.shift();
+      // El trail se guarda siempre en modo átomo, tanto si fue detectada como si salió por la apertura
+      if (currentMode === "atom" && a.history.length > 1) {
+        savedTrails.push({ points: [...a.history, { x: a.pos.x, y: a.pos.y }], framesLeft: 300, r: uiCache.protonR, g: uiCache.protonG, b: uiCache.protonB });
+        if (savedTrails.length > 6) savedTrails.shift();
+      }
       alphas.splice(i, 1);
       continue;
     }
@@ -210,37 +260,34 @@ const ELEMENT_NAMES = {
   114:"Flerovio",115:"Moscovio",116:"Livermorio",117:"Teneso",118:"Oganesón"
 };
 
-// Anotación didáctica superpuesta al átomo en modo átomo aislado.
-// Muestra el símbolo del elemento (si está en la tabla) o Z, el modelo y una
-// flecha punteada que conecta la etiqueta con el átomo para que el alumno
-// identifique inmediatamente de qué se trata.
-function drawAtomLabel(themeMode, atom) {
-  let cx = atom.pos.x;
-  let cy = atom.pos.y;
-  let edgeY = cy - atom.R - 8;
-  let labelY = edgeY - 22;
-  let nombre = ELEMENT_NAMES[atom.Z] ? ELEMENT_NAMES[atom.Z] : "Z=" + atom.Z;
-  let labelText = "Átomo de " + nombre;
-
+// Etiqueta del átomo en la esquina superior derecha del canvas.
+// Una línea punteada diagonal señala desde la caja hasta el borde del átomo.
+// Etiqueta "Detector" en la esquina inferior derecha, con línea punteada al arco.
+function drawDetectorLabel(themeMode) {
+  let labelText = "Detector";
   push();
   textSize(11.5);
   textStyle(NORMAL);
   let tw = textWidth(labelText);
-  let padX = 10, padY = 6;
+  let padX = 10;
   let boxW = tw + padX * 2;
   let boxH = 20;
-  let boxX = cx - boxW / 2;
-  let boxY = labelY - boxH / 2;
+  let boxX = width - boxW - 14;
+  let boxY = height - boxH - 14;
+  let labelX = boxX + boxW / 2;
+  let labelY = boxY + boxH / 2;
 
-  // Línea de puntero (dashes via drawingContext)
+  // Línea punteada desde la caja hasta el arco del detector (esquina inferior derecha)
+  let arcAngle = PI * 0.25; // ~45° en el cuadrante inferior derecho del arco
+  let arcPx = width / 2 + detectorRadius * Math.cos(arcAngle);
+  let arcPy = height / 2 + detectorRadius * Math.sin(arcAngle);
   drawingContext.save();
   drawingContext.setLineDash([4, 4]);
   stroke(themeMode === "light" ? color(100, 116, 139, 160) : color(148, 163, 184, 140));
   strokeWeight(1);
-  line(cx, boxY + boxH, cx, edgeY);
+  line(labelX, boxY, arcPx, arcPy);
   drawingContext.restore();
 
-  // Cuerpo de la etiqueta
   noStroke();
   fill(themeMode === "light" ? color(255, 255, 255, 230) : color(22, 26, 42, 230));
   rect(boxX, boxY, boxW, boxH, 5);
@@ -249,56 +296,180 @@ function drawAtomLabel(themeMode, atom) {
   noFill();
   rect(boxX, boxY, boxW, boxH, 5);
 
-  // Texto
   noStroke();
   fill(themeMode === "light" ? color(30, 41, 59) : color(203, 213, 225));
   textAlign(CENTER, CENTER);
-  text(labelText, cx, labelY);
+  text(labelText, labelX, labelY);
+  pop();
+}
+
+function drawAtomLabel(themeMode, atom) {
+  let nombre = ELEMENT_NAMES[atom.Z] ? ELEMENT_NAMES[atom.Z] : "Z=" + atom.Z;
+  let labelText = "Átomo de " + nombre;
+
+  push();
+  textSize(11.5);
+  textStyle(NORMAL);
+  let tw = textWidth(labelText);
+  let padX = 10;
+  let boxW = tw + padX * 2;
+  let boxH = 20;
+  let boxX = width - boxW - 14;
+  let boxY = 14;
+  let labelX = boxX + boxW / 2;
+  let labelY = boxY + boxH / 2;
+
+  // Línea diagonal desde la caja hasta el borde externo del átomo.
+  // En Rutherford llega hasta la última órbita electrónica; en Thomson hasta el borde de la esfera.
+  let lineX1 = labelX;
+  let lineY1 = boxY + boxH;
+  let dx = atom.pos.x - lineX1;
+  let dy = atom.pos.y - lineY1;
+  let dist = Math.sqrt(dx * dx + dy * dy);
+  let edgeR = atom.R;
+  if (atom.model === "rutherford") {
+    let orbits = atom.getOrbitRadii();
+    if (orbits.length > 0) edgeR = Math.max(...orbits);
+  }
+  let lineX2 = dist > 0 ? atom.pos.x - (dx / dist) * (edgeR + 4) : lineX1;
+  let lineY2 = dist > 0 ? atom.pos.y - (dy / dist) * (edgeR + 4) : lineY1 + 20;
+
+  drawingContext.save();
+  drawingContext.setLineDash([4, 4]);
+  stroke(themeMode === "light" ? color(100, 116, 139, 160) : color(148, 163, 184, 140));
+  strokeWeight(1);
+  line(lineX1, lineY1, lineX2, lineY2);
+  drawingContext.restore();
+
+  noStroke();
+  fill(themeMode === "light" ? color(255, 255, 255, 230) : color(22, 26, 42, 230));
+  rect(boxX, boxY, boxW, boxH, 5);
+  stroke(themeMode === "light" ? color(203, 213, 225) : color(55, 65, 95));
+  strokeWeight(1);
+  noFill();
+  rect(boxX, boxY, boxW, boxH, 5);
+
+  noStroke();
+  fill(themeMode === "light" ? color(30, 41, 59) : color(203, 213, 225));
+  textAlign(CENTER, CENTER);
+  text(labelText, labelX, labelY);
 
   pop();
 }
 
-// Fuente radiactiva de partículas α: blindaje de plomo + colimador, situada a la
-// izquierda de la apertura del detector. Las partículas emergen de su ranura, lo que
-// evita que aparezcan "de la nada" en mitad del canvas. La ranura se alinea con el haz.
+// Pista de disparo individual: callout con flecha izquierda posicionado justo dentro
+// del arco del detector, apuntando hacia la apertura del emisor.
+function drawClickHint(themeMode, openX, openHH) {
+  let notch = 12;    // profundidad de la flecha izquierda
+  let boxW = 132;
+  let boxH = 88;
+  let boxX = openX + 10;
+  let boxY = height / 2 - boxH / 2;
+  let cx   = boxX + notch + (boxW - notch) / 2;
+
+  push();
+  // Callout con flecha apuntando a la izquierda (hacia el emisor)
+  fill(themeMode === "light" ? color(37, 99, 235, 218) : color(22, 38, 110, 235));
+  stroke(themeMode === "light" ? color(29, 78, 216) : color(80, 120, 220));
+  strokeWeight(1);
+  beginShape();
+  vertex(boxX + notch, boxY);
+  vertex(boxX + boxW,  boxY);
+  vertex(boxX + boxW,  boxY + boxH);
+  vertex(boxX + notch, boxY + boxH);
+  vertex(boxX + notch, boxY + boxH / 2 + 10);
+  vertex(boxX,         boxY + boxH / 2);       // punta de la flecha
+  vertex(boxX + notch, boxY + boxH / 2 - 10);
+  endShape(CLOSE);
+
+  fill(255);
+  noStroke();
+  textAlign(CENTER, TOP);
+  textStyle(BOLD);
+  textSize(9);
+  text("MODO INDIVIDUAL", cx, boxY + 8);
+
+  stroke(255, 255, 255, 55);
+  strokeWeight(0.5);
+  line(boxX + notch + 4, boxY + 22, boxX + boxW - 6, boxY + 22);
+
+  noStroke();
+  fill(215, 228, 255);
+  textStyle(NORMAL);
+  textSize(9);
+  text("Haz clic en cualquier", cx, boxY + 28);
+  text("altura de esta zona.", cx, boxY + 41);
+  text("Cada clic = 1 partícula α.", cx, boxY + 55);
+  text("Observa su trayectoria.", cx, boxY + 69);
+
+  pop();
+}
+
+// Fuente radiactiva de partículas α: bloque de blindaje de plomo.
+// La apertura cubre toda la cara derecha (apertura = altura del emisor).
+// No hay jaws de colimador: las partículas pueden salir a cualquier altura.
 function drawEmitter(themeMode, openX, openHH) {
   let cy = height / 2;
-  let nozzleW = 7;
-  let bodyW = 26;
-  let bodyH = openHH * 2 + 18;
-  let nozzleX = openX - nozzleW;
-  let bodyX = nozzleX - bodyW;
+  let bodyH = height * EMITTER_H_FRAC;
+  let bodyW = Math.round(bodyH * 0.10);
+  let bodyX = openX - bodyW;
 
   push();
   noStroke();
 
-  // Cuerpo (blindaje)
+  // Cuerpo principal del blindaje
   fill(themeMode === "light" ? color(100, 116, 139) : color(60, 70, 95));
-  rect(bodyX, cy - bodyH / 2, bodyW, bodyH, 4);
-  // Rebordes para dar volumen
+  rect(bodyX, cy - bodyH / 2, bodyW, bodyH, 4, 0, 0, 4);
+
+  // Rebordes superior e inferior (efecto de volumen)
   fill(themeMode === "light" ? color(71, 85, 105) : color(40, 48, 68));
-  rect(bodyX, cy - bodyH / 2, bodyW, 4, 4, 4, 0, 0);
-  rect(bodyX, cy + bodyH / 2 - 4, bodyW, 4, 0, 0, 4, 4);
+  rect(bodyX, cy - bodyH / 2, bodyW, 7, 4, 0, 0, 0);
+  rect(bodyX, cy + bodyH / 2 - 7, bodyW, 7, 0, 0, 0, 4);
 
-  // Colimador (ranura de salida alineada con el haz)
-  fill(themeMode === "light" ? color(148, 163, 184) : color(90, 100, 130));
-  rect(nozzleX, cy - openHH, nozzleW, openHH * 2);
+  // Franja de emisión en la cara derecha (indica la superficie activa)
+  fill(themeMode === "light" ? color(148, 163, 184, 160) : color(100, 120, 170, 160));
+  rect(bodyX + bodyW - 5, cy - bodyH / 2 + 7, 5, bodyH - 14);
 
-  // Símbolo "α"
+  // Símbolo α centrado (parte superior del cuerpo)
   fill(themeMode === "light" ? color(248, 250, 252) : color(226, 232, 240));
   textAlign(CENTER, CENTER);
   textStyle(BOLD);
-  textSize(13);
-  text("α", bodyX + bodyW / 2, cy);
+  textSize(constrain(Math.round(bodyW * 0.55), 12, 40));
+  text("α", bodyX + bodyW / 2, cy - bodyH * 0.12);
 
-  // Etiqueta
-  fill(themeMode === "light" ? color(100, 116, 139) : color(130, 140, 165));
+  // Símbolo de radiactividad ☢ anclado al fondo del cuerpo
+  fill(themeMode === "light" ? color(240, 180, 20, 200) : color(255, 210, 40, 180));
   textStyle(NORMAL);
+  let radioSize = constrain(Math.round(bodyW * 0.50), 11, 34);
+  textSize(radioSize);
+  textAlign(CENTER, BOTTOM);
+  text("☢", bodyX + bodyW / 2, cy + bodyH / 2 - 8);
+
+  // Etiqueta bajo el cuerpo
+  fill(themeMode === "light" ? color(100, 116, 139) : color(130, 140, 165));
   textSize(9);
   textAlign(CENTER, TOP);
-  text("Fuente α", bodyX + bodyW / 2, cy + bodyH / 2 + 4);
+  text("Fuente α", bodyX + bodyW / 2, cy + bodyH / 2 + 5);
 
   pop();
+}
+
+// Dibuja y envejece las trayectorias persistentes guardadas al morir las partículas.
+function drawSavedTrails() {
+  noStroke();
+  for (let i = savedTrails.length - 1; i >= 0; i--) {
+    let t = savedTrails[i];
+    t.framesLeft--;
+    if (t.framesLeft <= 0) { savedTrails.splice(i, 1); continue; }
+    let timeFrac = t.framesLeft / 300.0;
+    let pts = t.points, n = pts.length;
+    let tr = t.r, tg = t.g, tb = t.b;
+    for (let j = 0; j < n; j++) {
+      let posAlpha = map(j, 0, n - 1, 8, 180);
+      fill(tr, tg, tb, posAlpha * timeFrac);
+      ellipse(pts[j].x, pts[j].y, map(j, 0, n - 1, 1.2, 3), map(j, 0, n - 1, 1.2, 3));
+    }
+  }
 }
 
 // Clasifica un proyectil ya detectado: actualiza estadísticas y el histograma angular.
@@ -395,14 +566,11 @@ function updateSidebarHistogram() {
 }
 
 function mousePressed() {
-  let openHHm = detectorRadius * Math.sin(OPENING_HALF_ANGLE_DEG * Math.PI / 180.0);
+  let openHHm = getOpenHH();
   let clickX = width / 2 - detectorRadius;
   if (currentTrigger === "click" && mouseX >= 0 && mouseX <= clickX + 30 &&
       mouseY >= height / 2 - openHHm && mouseY <= height / 2 + openHHm) {
-    if (!hasClickedInManualMode) {
-      hasClickedInManualMode = true;
-      updateManualHintVisibility();
-    }
+    if (!hasClickedInManualMode) hasClickedInManualMode = true;
     let sSlider = document.getElementById("ui-speed-slider");
     let v0 = sSlider ? parseFloat(sSlider.value) : 10.0;
     alphas.push(new AlphaParticle(clickX, mouseY, v0, 0));
@@ -412,9 +580,13 @@ function mousePressed() {
 }
 
 function buildEnvironment() {
+  savedTrails = [];
   let zSlider = document.getElementById("ui-z-slider");
   let z = zSlider ? parseInt(zSlider.value) : 14;
-  singleAtom = new ThomsonTarget(width / 2, height / 2, 190, z, false, currentModel);
+  // Radio del átomo escala con Z^(1/3): átomos más pesados son visualmente más grandes.
+  // Rango: ~80 px (H, Z=1) → 195 px (Og, Z=118).
+  let atomDisplayRadius = Math.round(constrain(50 + 145 * Math.pow(z / 118, 1 / 3), 60, 195));
+  singleAtom = new ThomsonTarget(width / 2, height / 2, atomDisplayRadius, z, false, currentModel);
   foilAtoms = [];
   
   let atomRadius = 14;
@@ -428,7 +600,7 @@ function buildEnvironment() {
   let startX = (width / 2) - (totalFoilWidth / 2);
 
   // Centrado vertical dentro del 60 % del radio del detector para no tocar el arco.
-  let foilHalfHeight = detectorRadius * 0.6;
+  let foilHalfHeight = getOpenHH();
   let numFilas = Math.max(1, Math.floor((foilHalfHeight * 2) / step));
   let usedHeight = (numFilas - 1) * step;
   let startY = (height / 2) - (usedHeight / 2);
@@ -445,16 +617,10 @@ function buildEnvironment() {
 function resetTelemetry() {
   statTotal = 0; statStraight = 0; statDeviated = 0; statRebound = 0;
   angleBins.fill(0);
+  savedTrails = [];
   updateSidebarHistogram();
 }
 
-function updateManualHintVisibility() {
-  let hintBanner = document.getElementById("ui-manual-hint");
-  if (hintBanner) {
-    hintBanner.style.display = (currentTrigger === "click" && !hasClickedInManualMode) ? "block" : "none";
-    hintBanner.style.opacity = (currentTrigger === "click" && !hasClickedInManualMode) ? "1.0" : "0.0";
-  }
-}
 
 function setupUIEventListeners() {
   document.getElementById("ui-atom-model").addEventListener("change", (e) => {
@@ -474,18 +640,17 @@ function setupUIEventListeners() {
     let playPauseBtn = document.getElementById("ui-btn-playpause");
     if (currentTrigger === "click") {
       hasClickedInManualMode = false;
-      if (groupRate) groupRate.style.display = "none"; 
-      if (groupEnergy) groupEnergy.style.gridColumn = "span 2"; 
+      if (groupRate) groupRate.style.display = "none";
+      if (groupEnergy) groupEnergy.style.gridColumn = "span 2";
       if (playPauseBtn) { playPauseBtn.disabled = true; isContinuousPlaying = false; }
     } else {
-      if (groupRate) groupRate.style.display = "block"; 
-      if (groupEnergy) groupEnergy.style.gridColumn = "span 1"; 
+      if (groupRate) groupRate.style.display = "block";
+      if (groupEnergy) groupEnergy.style.gridColumn = "span 1";
       if (playPauseBtn) playPauseBtn.disabled = false;
     }
     let playSpan = playPauseBtn.querySelector("span");
     if(playSpan) playSpan.innerText = "Play";
     playPauseBtn.className = "is-paused";
-    updateManualHintVisibility();
     alphas = []; deadImpacts = []; resetTelemetry();
   });
   let playPauseBtn = document.getElementById("ui-btn-playpause");
@@ -500,9 +665,12 @@ function setupUIEventListeners() {
     resetTelemetry(); buildEnvironment();
   });
   document.getElementById("ui-z-slider").addEventListener("input", (e) => {
-    document.getElementById("z-val").innerText = e.target.value;
+    let z = parseInt(e.target.value);
+    let nombre = ELEMENT_NAMES[z] ? ELEMENT_NAMES[z] : "Z=" + z;
+    document.getElementById("z-val").innerText = z + " – " + nombre;
     resetTelemetry(); buildEnvironment();
   });
+  { let z = parseInt(document.getElementById("ui-z-slider").value); document.getElementById("z-val").innerText = z + " – " + (ELEMENT_NAMES[z] || "Z=" + z); }
   document.getElementById("ui-rate-slider").addEventListener("input", (e) => {
     document.getElementById("rate-val").innerText = e.target.value;
   });
@@ -511,6 +679,10 @@ function setupUIEventListeners() {
   });
   document.getElementById("ui-btn-reset").addEventListener("click", () => {
     alphas = []; deadImpacts = []; resetTelemetry();
+  });
+  let infoCard = document.getElementById("ui-panel-info");
+  document.getElementById("ui-info-trigger").addEventListener("click", () => {
+    infoCard.classList.toggle("is-expanded");
   });
   let histCard = document.getElementById("ui-panel-histogram");
   document.getElementById("ui-histogram-trigger").addEventListener("click", () => {
@@ -564,13 +736,26 @@ function setupAppearanceEventListeners() {
   let container = document.getElementById("ui-dropdown-container");
   if (trigger && container) {
     trigger.addEventListener("click", (e) => { e.stopPropagation(); container.classList.toggle("is-active"); });
+    // Evita que clicks dentro de la card cierren el dropdown antes de procesar el control
+    let card = container.querySelector(".dropdown-card");
+    if (card) card.addEventListener("click", (e) => { e.stopPropagation(); });
     document.addEventListener("click", () => { container.classList.remove("is-active"); });
   }
-  document.getElementById("ui-theme-select").addEventListener("change", (e) => {
+  // Inicializa data-theme desde el valor actual del selector (evita desfase al cargar)
+  let themeSelect = document.getElementById("ui-theme-select");
+  uiCache.theme = themeSelect ? themeSelect.value : "dark";
+  document.documentElement.setAttribute("data-theme", uiCache.theme);
+  themeSelect.addEventListener("change", (e) => {
+    uiCache.theme = e.target.value;
     document.documentElement.setAttribute("data-theme", e.target.value);
     updateSidebarHistogram();
   });
   document.getElementById("ui-radius-electron").addEventListener("input", (e) => {
     document.getElementById("electron-radius-val").innerText = e.target.value + " px";
+    refreshColorCache();
+  });
+  ["ui-color-proton", "ui-color-neutron", "ui-color-electron", "ui-color-alpha"].forEach(id => {
+    let el = document.getElementById(id);
+    if (el) el.addEventListener("input", refreshColorCache);
   });
 }

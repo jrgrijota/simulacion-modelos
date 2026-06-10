@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -181,6 +181,11 @@
     .collapsible-arrow { font-size: 9px; color: var(--text-muted); transition: transform 0.2s ease; }
     .collapsible-content { max-height: 0; overflow: hidden; padding: 0 12px; transition: max-height 0.23s cubic-bezier(0.4, 0, 0.2, 1), padding 0.23s ease; }
     .collapsible-card.is-expanded .collapsible-content { max-height: 240px; padding-bottom: 12px; }
+    #ui-panel-info.is-expanded .collapsible-content { max-height: 420px; }
+    .info-block { margin-bottom: 9px; }
+    .info-block:last-child { margin-bottom: 0; }
+    .info-label { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: #2563eb; margin-bottom: 3px; }
+    .info-text { font-size: 11px; line-height: 1.55; color: var(--text-label); }
     .collapsible-card.is-expanded .collapsible-arrow { transform: rotate(180deg); }
 
     .stat-row { display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; margin-bottom: 6px; color: var(--text-label); }
@@ -219,7 +224,34 @@
 
   <div class="simulation-container">
     <div class="control-panel">
-      
+
+      <div class="collapsible-card" id="ui-panel-info">
+        <button class="collapsible-trigger" id="ui-info-trigger">
+          <span class="collapsible-trigger-title">Contexto Experimental</span>
+          <span class="collapsible-arrow">▼</span>
+        </button>
+        <div class="collapsible-content">
+          <div class="info-block">
+            <div class="info-label">¿Qué se simula?</div>
+            <p class="info-text">Partículas alfa (núcleo de He-4: 2p&nbsp;+&nbsp;2n) son lanzadas contra una lámina metálica ultradelgada. El ángulo de desviación revela cómo está distribuida la carga eléctrica dentro del átomo.</p>
+          </div>
+          <div class="info-block">
+            <div class="info-label">Modelos atómicos</div>
+            <p class="info-text"><strong>Thomson</strong> (budín de pasas): carga positiva difusa por toda la esfera → deflexiones pequeñas, siempre &lt;&nbsp;5°.<br>
+            <strong>Rutherford</strong> (nuclear): carga concentrada en un núcleo diminuto → la mayoría pasan rectas, pero unas pocas rebotan casi 180°.</p>
+          </div>
+          <div class="info-block">
+            <div class="info-label">Modos de visualización</div>
+            <p class="info-text"><strong>Átomo</strong>: sigue partículas individuales e inspecciona la trayectoria.<br>
+            <strong>Lámina</strong>: acumula estadística de dispersión a través de muchos átomos.</p>
+          </div>
+          <div class="info-block">
+            <div class="info-label">Histograma angular</div>
+            <p class="info-text">Distribución de partículas detectadas por ángulo (0°–180°). La diferencia entre modelos en los ángulos grandes es la prueba experimental que llevó al descubrimiento del núcleo atómico.</p>
+          </div>
+        </div>
+      </div>
+
       <div class="control-card">
         <h2>Paradigma Atómico</h2>
         <div class="grid-2col control-group">
@@ -301,10 +333,7 @@
     </div>
 
     <div class="canvas-area">
-      <div id="ui-manual-hint" class="manual-hint-banner">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-        Haz clic en la apertura de la fuente α para lanzar partículas
-      </div>
+      <div id="ui-manual-hint" class="manual-hint-banner" style="display:none;"></div>
 
       <div class="theme-dropdown-container" id="ui-dropdown-container">
         <button class="dropdown-gear-btn" id="ui-dropdown-trigger">
@@ -328,7 +357,7 @@
           <h3>Paleta</h3>
           <div class="color-row"><label>Partícula Alfa</label><input type="color" id="ui-color-alpha" class="color-picker-input" value="#00ff00"></div>
           <div class="color-row"><label>Protones</label><input type="color" id="ui-color-proton" class="color-picker-input" value="#ff0000"></div>
-          <div class="color-row"><label>Neutrones</label><input type="color" id="ui-color-neutron" class="color-picker-input" value="#ffffff"></div>
+          <div class="color-row"><label>Neutrones</label><input type="color" id="ui-color-neutron" class="color-picker-input" value="#aaaaaa"></div>
           <div class="color-row"><label>Electrones</label><input type="color" id="ui-color-electron" class="color-picker-input" value="#00a0ff"></div>
         </div>
       </div>

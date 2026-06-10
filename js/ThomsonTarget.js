@@ -15,24 +15,22 @@ class ThomsonTarget {
     this.ke = (currentModel === "rutherford") ? 40000.0 : 8000.0;
     this.Z = numElectrons;
     
-    this.electrons = [];     
-    this.positivePoints = [];
-    this.nucleons = []; 
+    this.electrons = [];
+    this.nucleons = [];
     this.orbitAngle = 0;
+    this._orbitRadii = null;
+    this._force = { x: 0, y: 0 };
     
     this.generateAtom();
   }
 
   generateAtom() {
     this.electrons = [];
-    this.positivePoints = [];
     this.nucleons = [];
+    this._orbitRadii = null;
 
     if (this.model === "thomson") {
-      let totalSlots = 500;
       let n = this.Z;
-      let positiveSlots = totalSlots - n;
-      this.qPositivePoint = n / positiveSlots;
 
       let remaining = n;
       let ringCapacities = [1, 5, 10, 15, 22, 30, 40];
@@ -63,13 +61,6 @@ class ThomsonTarget {
             isEjected: false
           });
         }
-      }
-
-      let goldenAngle = 137.5 * (Math.PI / 180); 
-      for (let i = 0; i < positiveSlots; i++) {
-        let r = this.R * Math.sqrt(i / positiveSlots) * 0.95; 
-        let angle = i * goldenAngle;
-        this.positivePoints.push({ x: this.pos.x + r * Math.cos(angle), y: this.pos.y + r * Math.sin(angle) });
       }
 
     } else {
@@ -119,15 +110,17 @@ class ThomsonTarget {
     }
   }
 
-  // Devuelve los radios únicos de órbita a partir de los electrones del átomo.
+  // Devuelve los radios únicos de órbita. Resultado cacheado: O(n) solo la primera vez.
   getOrbitRadii() {
+    if (this._orbitRadii) return this._orbitRadii;
     let radii = [];
     for (let e of this.electrons) {
       let found = false;
       for (let r of radii) { if (Math.abs(r - e.rLayer) < 0.5) { found = true; break; } }
       if (!found) radii.push(e.rLayer);
     }
-    return radii.sort((a, b) => a - b);
+    this._orbitRadii = radii.sort((a, b) => a - b);
+    return this._orbitRadii;
   }
 
   updateElectrons() {
@@ -146,6 +139,8 @@ class ThomsonTarget {
 
   // OPTIMIZACIÓN DE COLISIONES: Sin instanciación de vectores, evaluación primaria mediante cuadrados
   checkElectronCollisions(alpha) {
+    let _adx = alpha.pos.x - this.pos.x, _ady = alpha.pos.y - this.pos.y;
+    if (_adx * _adx + _ady * _ady > this.R * this.R * 4) return;
     for (let e of this.electrons) {
       if (e.isEjected) continue;
 
@@ -189,7 +184,7 @@ class ThomsonTarget {
     // Equivale al radio de Debye en escala de simulación.
     let screeningLength = this.R * 1.2;
 
-    if (r > screeningLength) return { x: 0, y: 0 };
+    if (r > screeningLength) { this._force.x = 0; this._force.y = 0; return this._force; }
 
     let nx = r > 0 ? dx / r : 0;
     let ny = r > 0 ? dy / r : 0;
@@ -258,7 +253,8 @@ class ThomsonTarget {
       }
     }
     
-    return { x: fx, y: fy };
+    this._force.x = fx; this._force.y = fy;
+    return this._force;
   }
 
   display() {
@@ -267,13 +263,11 @@ class ThomsonTarget {
     scale(this.visualScale);
     translate(-this.pos.x, -this.pos.y);
 
-    let tInput = document.getElementById("ui-theme-select");
-    let theme = tInput ? tInput.value : "dark";
-    
-    let protonColor = document.getElementById("ui-color-proton") ? color(document.getElementById("ui-color-proton").value) : color(255, 0, 0);
-    let neutronColor = document.getElementById("ui-color-neutron") ? color(document.getElementById("ui-color-neutron").value) : color(255, 255, 255);
-    let electronColor = document.getElementById("ui-color-electron") ? color(document.getElementById("ui-color-electron").value) : color(0, 160, 255);
-    let visualERadius = parseFloat(document.getElementById("ui-radius-electron") ? document.getElementById("ui-radius-electron").value : 2.0);
+    let theme        = uiCache.theme;
+    let protonColor  = uiCache.protonColor;
+    let neutronColor = uiCache.neutronColor;
+    let electronColor = uiCache.electronColor;
+    let visualERadius = uiCache.electronRadius;
 
     if (this.model === "thomson") {
       if (!this.isSimplified) {
@@ -302,10 +296,6 @@ class ThomsonTarget {
       }
     } else {
       if (!this.isSimplified) {
-        stroke(theme === "light" ? color(0, 0, 0, 20) : color(255, 255, 255, 15));
-        strokeWeight(0.5);
-        noFill();
-        ellipse(this.pos.x, this.pos.y, this.R * 2, this.R * 2);
         // Órbitas de capas electrónicas (Bohr)
         drawingContext.save();
         drawingContext.setLineDash([5, 7]);

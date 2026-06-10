@@ -14,9 +14,6 @@ class AlphaParticle {
     this.deviationAngle = 0;
     this.hasBeenCounted = false;
 
-    let colorInput = document.getElementById("ui-color-alpha");
-    this.baseColorHex = colorInput ? colorInput.value : "#00ff00";
-    this.particleColor = color(this.baseColorHex);
   }
 
   // Integrador de Verlet por desdoblamiento primitivo. Evita la instanciación de clases de p5.Vector
@@ -53,25 +50,35 @@ class AlphaParticle {
       this.deviationAngle = Math.acos(cosTheta) * (180 / Math.PI);
     }
     
-    let amt = constrain(this.deviationAngle / 35.0, 0, 1);
-    let colorInput = document.getElementById("ui-color-alpha");
-    let baseColor = colorInput ? color(colorInput.value) : color(0, 255, 0);
-    this.particleColor = lerpColor(baseColor, color(255, 0, 0), amt);
-
     if (frameCount % 2 === 0) {
       this.history.push({ x: this.pos.x, y: this.pos.y });
-      if (this.history.length > 45) this.history.shift();
+      if (this.history.length > 400) this.history.shift();
     }
   }
 
   display() {
+    let protonColor  = uiCache.protonColor;
+    let neutronColor = uiCache.neutronColor;
+
+    // Núcleo de helio-4: 2 protones + 2 neutrones dispuestos en cuadrado
+    let nr = this.visualRadius * 0.62;  // radio de cada nucleón
+    let d  = this.visualRadius * 0.44;  // desplazamiento desde el centro
+    let px = this.pos.x, py = this.pos.y;
+
     noStroke();
-    fill(this.particleColor);
-    ellipse(this.pos.x, this.pos.y, this.visualRadius * 2, this.visualRadius * 2);
-    
+    // Neutrones (fondo)
+    fill(neutronColor);
+    ellipse(px - d, py - d, nr * 2, nr * 2);
+    ellipse(px + d, py + d, nr * 2, nr * 2);
+    // Protones (frente)
+    fill(protonColor);
+    ellipse(px + d, py - d, nr * 2, nr * 2);
+    ellipse(px - d, py + d, nr * 2, nr * 2);
+
+    // Trail en color de los protones
     for (let i = 0; i < this.history.length; i++) {
       let p = this.history[i];
-      fill(red(this.particleColor), green(this.particleColor), blue(this.particleColor), map(i, 0, this.history.length, 5, 80));
+      fill(uiCache.protonR, uiCache.protonG, uiCache.protonB, map(i, 0, this.history.length, 4, 70));
       ellipse(p.x, p.y, 2, 2);
     }
   }
