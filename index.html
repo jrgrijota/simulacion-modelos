@@ -201,6 +201,7 @@
     .color-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 11px; }
     .color-picker-input { width: 20px; height: 20px; border: none; cursor: pointer; background: none; -webkit-appearance: none; appearance: none; }
     .color-picker-input::-webkit-color-swatch { border: 1px solid var(--border-main); border-radius: 50%; }
+    .toggle-input { width: 16px; height: 16px; cursor: pointer; accent-color: #2563eb; }
 
     .btn-container { margin-top: auto; padding-bottom: 2px; flex-shrink: 0; }
   </style>
@@ -329,6 +330,8 @@
             <label>Radio electrones <span class="data-readout" id="electron-radius-val">2 px</span></label>
             <input type="range" id="ui-radius-electron" min="1" max="10" value="2">
           </div>
+          <h3>Análisis</h3>
+          <div class="color-row"><label>Histograma de dispersión</label><input type="checkbox" id="ui-toggle-histogram" class="toggle-input" checked></div>
           <h3>Paleta</h3>
           <div class="color-row"><label>Partícula Alfa</label><input type="color" id="ui-color-alpha" class="color-picker-input" value="#00ff00"></div>
           <div class="color-row"><label>Protones</label><input type="color" id="ui-color-proton" class="color-picker-input" value="#ff0000"></div>

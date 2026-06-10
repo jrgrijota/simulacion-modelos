@@ -17,8 +17,13 @@ let statStraight = 0;
 let statDeviated = 0;
 let statRebound = 0;
 
+// Histograma de distribución angular: 18 contenedores de 10° (0°–180°).
+// Es el dato experimental clave del experimento de Geiger-Marsden.
+let angleBins = new Array(18).fill(0);
+let showHistogram = true;
+
 let hasClickedInManualMode = false;
-let isContinuousPlaying = false; 
+let isContinuousPlaying = false;
 
 function setup() {
   let canvas = createCanvas(canvasWidth, canvasHeight);
@@ -124,11 +129,7 @@ function draw() {
       
       if (!a.hasBeenCounted) {
         a.hasBeenCounted = true;
-        let finalAngle = a.deviationAngle; 
-        if (finalAngle < 1.0) statStraight++;
-        else if (finalAngle >= 1.0 && finalAngle <= 90.0) statDeviated++;
-        else statRebound++;
-        updateTelemetryUI();
+        recordScattering(a.deviationAngle);
       }
       if (deadImpacts.length > 40) deadImpacts.shift(); 
       alphas.splice(i, 1);
@@ -138,12 +139,98 @@ function draw() {
     if (a.pos.x < -10 || a.pos.y < -50 || a.pos.y > height + 50) {
       if (a.pos.x < -10 && !a.hasBeenCounted) {
         a.hasBeenCounted = true;
-        statRebound++;
-        updateTelemetryUI();
+        recordScattering(a.deviationAngle);
       }
       alphas.splice(i, 1);
     }
   }
+
+  drawHistogram(themeMode);
+}
+
+// Clasifica un proyectil ya detectado: actualiza estadísticas y el histograma angular.
+function recordScattering(angleDeg) {
+  if (angleDeg < 1.0) statStraight++;
+  else if (angleDeg <= 90.0) statDeviated++;
+  else statRebound++;
+
+  let binWidth = 180.0 / angleBins.length;
+  let bin = Math.floor(angleDeg / binWidth);
+  if (bin < 0) bin = 0;
+  if (bin >= angleBins.length) bin = angleBins.length - 1;
+  angleBins[bin]++;
+
+  updateTelemetryUI();
+}
+
+// Histograma de distribución angular superpuesto en el canvas (esquina inferior izquierda).
+// Reproduce el gráfico experimental de Geiger-Marsden: número de impactos frente al ángulo de dispersión.
+function drawHistogram(themeMode) {
+  if (!showHistogram) return;
+
+  let panelW = 300, panelH = 140;
+  let px = 16, py = height - panelH - 16;
+
+  push();
+
+  // Tarjeta de fondo
+  noStroke();
+  fill(themeMode === "light" ? color(255, 255, 255, 225) : color(20, 22, 32, 210));
+  rect(px, py, panelW, panelH, 8);
+  noFill();
+  stroke(themeMode === "light" ? color(203, 213, 225) : color(60, 66, 90));
+  strokeWeight(1);
+  rect(px, py, panelW, panelH, 8);
+
+  // Título
+  noStroke();
+  fill(themeMode === "light" ? color(71, 85, 105) : color(148, 163, 184));
+  textSize(11);
+  textStyle(BOLD);
+  textAlign(LEFT, TOP);
+  text("DISTRIBUCIÓN ANGULAR DE DISPERSIÓN", px + 12, py + 9);
+
+  // Geometría del área de barras
+  let padL = 12, padR = 12, padTop = 28, padBot = 20;
+  let ax = px + padL;
+  let ay = py + padTop;
+  let aw = panelW - padL - padR;
+  let ah = panelH - padTop - padBot;
+  let nBins = angleBins.length;
+  let barW = aw / nBins;
+
+  let maxBin = 1;
+  for (let c of angleBins) if (c > maxBin) maxBin = c;
+
+  // Eje base
+  stroke(themeMode === "light" ? color(148, 163, 184) : color(80, 88, 110));
+  strokeWeight(1);
+  line(ax, ay + ah, ax + aw, ay + ah);
+
+  // Barras coloreadas por categoría (mismo código de color que los datos estadísticos)
+  noStroke();
+  for (let i = 0; i < nBins; i++) {
+    let angleMid = (i + 0.5) * (180.0 / nBins);
+    let h = (angleBins[i] / maxBin) * ah;
+    if (i === 0) fill(0, 255, 0);                 // Haz directo / ángulos pequeños
+    else if (angleMid <= 90.0) fill(255, 176, 0); // Dispersados
+    else fill(255, 51, 51);                        // Retrodispersión
+    let bx = ax + i * barW;
+    rect(bx + 1, ay + ah - h, barW - 2, h, 2);
+  }
+
+  // Etiquetas del eje angular
+  fill(themeMode === "light" ? color(100, 116, 139) : color(120, 130, 155));
+  textSize(9);
+  textStyle(NORMAL);
+  textAlign(LEFT, TOP);
+  text("0°", ax, ay + ah + 4);
+  textAlign(CENTER, TOP);
+  text("90°", ax + aw / 2, ay + ah + 4);
+  textAlign(RIGHT, TOP);
+  text("180°", ax + aw, ay + ah + 4);
+
+  pop();
 }
 
 function mousePressed() {
@@ -200,6 +287,7 @@ function updateTelemetryUI() {
 
 function resetTelemetry() {
   statTotal = 0; statStraight = 0; statDeviated = 0; statRebound = 0;
+  angleBins.fill(0);
   updateTelemetryUI();
 }
 
@@ -286,4 +374,8 @@ function setupAppearanceEventListeners() {
   document.getElementById("ui-radius-electron").addEventListener("input", (e) => {
     document.getElementById("electron-radius-val").innerText = e.target.value + " px";
   });
+  let histToggle = document.getElementById("ui-toggle-histogram");
+  if (histToggle) {
+    histToggle.addEventListener("change", (e) => { showHistogram = e.target.checked; });
+  }
 }
