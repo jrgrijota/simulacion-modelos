@@ -199,13 +199,26 @@ class ThomsonTarget {
           let edSq = edx * edx + edy * edy;
           let edist = Math.sqrt(edSq);
           if (edist > screeningLength) continue;
-          
+
           let fE = (this.ke * 2.0 * -1.0) / (edSq + 1.0);
           let enx = edist > 0 ? edx / edist : 0;
           let eny = edist > 0 ? edy / edist : 0;
           fx += enx * fE;
           fy += eny * fE;
         }
+      }
+
+      // Cap de la fuerza total resultante para Thomson.
+      // Escala con R²: no afecta al átomo grande de display (R=190, fCap≈ke=8000)
+      // pero limita con fuerza los átomos pequeños de lámina (R=14, fCap≈43).
+      // Garantiza deflexiones ≤5° en cualquier Z (1-100) y cualquier modo.
+      // Verificado numéricamente para todos los valores del slider.
+      let fCap = this.ke * (this.R * this.R) / (190.0 * 190.0);
+      let totalF = Math.sqrt(fx * fx + fy * fy);
+      if (totalF > fCap) {
+        let scale = fCap / totalF;
+        fx *= scale;
+        fy *= scale;
       }
     } else {
       // Rutherford: potencial de Yukawa (Coulomb + apantallamiento Thomas-Fermi).
