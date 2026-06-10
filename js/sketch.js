@@ -7,10 +7,8 @@ let currentMode = "atom";
 let currentTrigger = "click"; 
 let currentModel = "thomson"; 
 
-let canvasWidth = 870;
-let canvasHeight = 686;
-let detectorX = 780; 
-let spawnX = 25; 
+let detectorX = 780; // Se recalcula al tamaño real del canvas en setup()/windowResized()
+let spawnX = 25;
 
 let statTotal = 0;
 let statStraight = 0;
@@ -26,13 +24,28 @@ let hasClickedInManualMode = false;
 let isContinuousPlaying = false;
 
 function setup() {
-  let canvas = createCanvas(canvasWidth, canvasHeight);
+  // El canvas se ajusta al tamaño real de su contenedor para que nada quede
+  // recortado (antes era fijo 870x686 y se cortaba en pantallas más bajas).
+  let holder = document.getElementById("canvas-holder");
+  let w = holder && holder.offsetWidth ? holder.offsetWidth : 870;
+  let h = holder && holder.offsetHeight ? holder.offsetHeight : 686;
+  let canvas = createCanvas(w, h);
   canvas.parent("canvas-holder");
+  detectorX = width - 90;
 
   setupAppearanceEventListeners();
   setupUIEventListeners();
   buildEnvironment();
   updateManualHintVisibility();
+}
+
+// Reajusta el canvas y reconstruye el escenario cuando cambia el tamaño de la ventana.
+function windowResized() {
+  let holder = document.getElementById("canvas-holder");
+  if (!holder) return;
+  resizeCanvas(holder.offsetWidth, holder.offsetHeight);
+  detectorX = width - 90;
+  buildEnvironment();
 }
 
 function draw() {

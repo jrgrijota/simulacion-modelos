@@ -5,8 +5,11 @@ class ThomsonTarget {
     this.isSimplified = isSimplified; 
     this.model = currentModel; 
     
-    this.ke = 1500.0; 
-    this.Z = numElectrons;   
+    // Constante de Coulomb en escala de simulación. Calibrada para reproducir
+    // la fenomenología correcta: Rutherford retrodispersa (>90°) a parámetros
+    // de impacto pequeños y Z alto, mientras Thomson apenas desvía (<~10°).
+    this.ke = 40000.0;
+    this.Z = numElectrons;
     
     this.electrons = [];     
     this.positivePoints = [];
@@ -205,11 +208,12 @@ class ThomsonTarget {
       }
     } else {
       // Rutherford: potencial de Yukawa (Coulomb + apantallamiento Thomas-Fermi).
-      // El núcleo duro (softening = coreRadius²) evita divergencias sin cap artificial,
-      // dando una curva de fuerza continua y diferenciable en todo r.
-      let coreSq = this.coreRadius * this.coreRadius;
+      // Regularización de Plummer (softening pequeño) en lugar del antiguo cap duro:
+      // hace la fuerza finita y continua en r→0 sin discontinuidades. El valor es
+      // pequeño a propósito; uno grande (p.ej. coreRadius²) anularía la dispersión.
+      let softening = 2.0;
       let factorAtenuacion = Math.exp(-r / screeningLength);
-      let fMag = ((this.ke * 2.0 * this.Z) / (rSq + coreSq)) * factorAtenuacion;
+      let fMag = ((this.ke * 2.0 * this.Z) / (rSq + softening)) * factorAtenuacion;
       fx += nx * fMag;
       fy += ny * fMag;
     }
