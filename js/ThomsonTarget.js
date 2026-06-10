@@ -5,10 +5,11 @@ class ThomsonTarget {
     this.isSimplified = isSimplified; 
     this.model = currentModel; 
     
-    // Constante de Coulomb en escala de simulación. Calibrada para reproducir
-    // la fenomenología correcta: Rutherford retrodispersa (>90°) a parámetros
-    // de impacto pequeños y Z alto, mientras Thomson apenas desvía (<~10°).
-    this.ke = 40000.0;
+    // Constante de Coulomb calibrada por modelo:
+    // - Rutherford (ke=40000): retrodispersa a b pequeño, decae con Z correcto.
+    // - Thomson (ke=8000): deflexiones visibles pero <~3.5° por átomo incluso
+    //   en lámina (R=14), cumpliendo el límite pedagógico de ≤5°.
+    this.ke = (currentModel === "rutherford") ? 40000.0 : 8000.0;
     this.Z = numElectrons;
     
     this.electrons = [];     
