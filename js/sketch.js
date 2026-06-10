@@ -22,6 +22,9 @@ let angleBins = new Array(18).fill(0);
 let hasClickedInManualMode = false;
 let isContinuousPlaying = false;
 
+// Índice de la barra del histograma bajo el cursor (-1 = ninguna).
+let histogramHoverBin = -1;
+
 function setup() {
   // El canvas se ajusta al tamaño real de su contenedor para que nada quede
   // recortado (antes era fijo 870x686 y se cortaba en pantallas más bajas).
@@ -83,6 +86,9 @@ function draw() {
     }
   }
 
+  // Fuente radiactiva: las partículas emergen de su colimador en ambos modos.
+  drawEmitter(themeMode, openX, openHH);
+
   if (currentTrigger === "continuous" && isContinuousPlaying) {
     let rSlider = document.getElementById("ui-rate-slider");
     let rate = rSlider ? parseInt(rSlider.value) : 20;
@@ -100,6 +106,7 @@ function draw() {
     if (singleAtom) {
       singleAtom.updateElectrons();
       singleAtom.display();
+      drawAtomLabel(themeMode, singleAtom);
     }
   } else {
     for (let target of foilAtoms) {
@@ -179,6 +186,106 @@ function draw() {
 
 }
 
+// Nombres de elementos más comunes (Z 1–36 + algunos relevantes).
+const ELEMENT_NAMES = {
+  1:"H", 2:"He", 3:"Li", 4:"Be", 5:"B", 6:"C", 7:"N", 8:"O", 9:"F", 10:"Ne",
+  11:"Na", 12:"Mg", 13:"Al", 14:"Si", 15:"P", 16:"S", 17:"Cl", 18:"Ar",
+  19:"K", 20:"Ca", 26:"Fe", 27:"Co", 28:"Ni", 29:"Cu", 30:"Zn",
+  47:"Ag", 50:"Sn", 79:"Au", 82:"Pb", 92:"U"
+};
+
+// Anotación didáctica superpuesta al átomo en modo átomo aislado.
+// Muestra el símbolo del elemento (si está en la tabla) o Z, el modelo y una
+// flecha punteada que conecta la etiqueta con el átomo para que el alumno
+// identifique inmediatamente de qué se trata.
+function drawAtomLabel(themeMode, atom) {
+  let cx = atom.pos.x;
+  let cy = atom.pos.y;
+  let edgeY = cy - atom.R - 8;
+  let labelY = edgeY - 22;
+  let sym = ELEMENT_NAMES[atom.Z] ? ELEMENT_NAMES[atom.Z] : "Z=" + atom.Z;
+  let modelName = atom.model === "rutherford" ? "Rutherford" : "Thomson";
+  let labelText = "Átomo de " + sym + "  ·  Modelo " + modelName;
+
+  push();
+  textSize(11.5);
+  textStyle(NORMAL);
+  let tw = textWidth(labelText);
+  let padX = 10, padY = 6;
+  let boxW = tw + padX * 2;
+  let boxH = 20;
+  let boxX = cx - boxW / 2;
+  let boxY = labelY - boxH / 2;
+
+  // Línea de puntero (dashes via drawingContext)
+  drawingContext.save();
+  drawingContext.setLineDash([4, 4]);
+  stroke(themeMode === "light" ? color(100, 116, 139, 160) : color(148, 163, 184, 140));
+  strokeWeight(1);
+  line(cx, boxY + boxH, cx, edgeY);
+  drawingContext.restore();
+
+  // Cuerpo de la etiqueta
+  noStroke();
+  fill(themeMode === "light" ? color(255, 255, 255, 230) : color(22, 26, 42, 230));
+  rect(boxX, boxY, boxW, boxH, 5);
+  stroke(themeMode === "light" ? color(203, 213, 225) : color(55, 65, 95));
+  strokeWeight(1);
+  noFill();
+  rect(boxX, boxY, boxW, boxH, 5);
+
+  // Texto
+  noStroke();
+  fill(themeMode === "light" ? color(30, 41, 59) : color(203, 213, 225));
+  textAlign(CENTER, CENTER);
+  text(labelText, cx, labelY);
+
+  pop();
+}
+
+// Fuente radiactiva de partículas α: blindaje de plomo + colimador, situada a la
+// izquierda de la apertura del detector. Las partículas emergen de su ranura, lo que
+// evita que aparezcan "de la nada" en mitad del canvas. La ranura se alinea con el haz.
+function drawEmitter(themeMode, openX, openHH) {
+  let cy = height / 2;
+  let nozzleW = 7;
+  let bodyW = 26;
+  let bodyH = openHH * 2 + 18;
+  let nozzleX = openX - nozzleW;
+  let bodyX = nozzleX - bodyW;
+
+  push();
+  noStroke();
+
+  // Cuerpo (blindaje)
+  fill(themeMode === "light" ? color(100, 116, 139) : color(60, 70, 95));
+  rect(bodyX, cy - bodyH / 2, bodyW, bodyH, 4);
+  // Rebordes para dar volumen
+  fill(themeMode === "light" ? color(71, 85, 105) : color(40, 48, 68));
+  rect(bodyX, cy - bodyH / 2, bodyW, 4, 4, 4, 0, 0);
+  rect(bodyX, cy + bodyH / 2 - 4, bodyW, 4, 0, 0, 4, 4);
+
+  // Colimador (ranura de salida alineada con el haz)
+  fill(themeMode === "light" ? color(148, 163, 184) : color(90, 100, 130));
+  rect(nozzleX, cy - openHH, nozzleW, openHH * 2);
+
+  // Símbolo "α"
+  fill(themeMode === "light" ? color(248, 250, 252) : color(226, 232, 240));
+  textAlign(CENTER, CENTER);
+  textStyle(BOLD);
+  textSize(13);
+  text("α", bodyX + bodyW / 2, cy);
+
+  // Etiqueta
+  fill(themeMode === "light" ? color(100, 116, 139) : color(130, 140, 165));
+  textStyle(NORMAL);
+  textSize(9);
+  textAlign(CENTER, TOP);
+  text("Fuente α", bodyX + bodyW / 2, cy + bodyH / 2 + 4);
+
+  pop();
+}
+
 // Clasifica un proyectil ya detectado: actualiza estadísticas y el histograma angular.
 function recordScattering(angleDeg) {
   if (angleDeg < 1.0) statStraight++;
@@ -251,6 +358,16 @@ function updateSidebarHistogram() {
     }
   }
 
+  // Resalte de la barra bajo el cursor
+  if (histogramHoverBin >= 0 && histogramHoverBin < nBins) {
+    let i = histogramHoverBin;
+    let h = Math.max((angleBins[i] / maxBin) * ah, 2);
+    let bx = ax + i * barW;
+    ctx.strokeStyle = dark ? "rgba(255,255,255,0.85)" : "rgba(15,23,42,0.85)";
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(bx + 1, ay + ah - h, barW - 2, h);
+  }
+
   // Etiquetas eje X
   ctx.font = "9px sans-serif";
   ctx.fillStyle = dark ? "rgba(120,130,155,1)" : "rgba(100,116,139,1)";
@@ -291,11 +408,19 @@ function buildEnvironment() {
   let numColumnas = lSlider ? parseInt(lSlider.value) : 3;
   let totalFoilWidth = (numColumnas - 1) * atomDiameter;
   let startX = (width / 2) - (totalFoilWidth / 2);
-  
+
+  // La lámina se centra verticalmente y se limita a una altura menor que el radio
+  // del detector, de modo que no se solape con el arco (las "paredes") del detector.
+  let foilHalfHeight = detectorRadius * 0.6;
+  let numFilas = Math.max(1, Math.floor((foilHalfHeight * 2) / atomDiameter));
+  let usedHeight = (numFilas - 1) * atomDiameter;
+  let startY = (height / 2) - (usedHeight / 2);
+
   for (let col = 0; col < numColumnas; col++) {
-    let x = startX + col * atomDiameter; 
-    for (let y = atomRadius + 40; y < height - 20; y += atomDiameter) {
-      foilAtoms.push(new ThomsonTarget(x, y, atomRadius, z, true, currentModel));
+    let x = startX + col * atomDiameter;
+    for (let fila = 0; fila < numFilas; fila++) {
+      let y = startY + fila * atomDiameter;
+      foilAtoms.push(new ThomsonTarget(x, y, atomRadius, z, true, currentModel, 0.6));
     }
   }
 }
@@ -375,6 +500,46 @@ function setupUIEventListeners() {
     histCard.classList.toggle("is-expanded");
     updateSidebarHistogram();
   });
+
+  // Tooltip del histograma: muestra recuento y porcentaje de la barra bajo el cursor.
+  let hCanvas = document.getElementById("histogram-canvas");
+  let tooltip = document.getElementById("histogram-tooltip");
+  if (hCanvas && tooltip) {
+    hCanvas.style.cursor = "crosshair";
+    hCanvas.addEventListener("mousemove", (e) => {
+      let rect = hCanvas.getBoundingClientRect();
+      let mx = (e.clientX - rect.left) * (hCanvas.width / rect.width);
+      let padL = 8, padR = 8;
+      let aw = hCanvas.width - padL - padR;
+      let nBins = angleBins.length;
+      let barW = aw / nBins;
+      let b = Math.floor((mx - padL) / barW);
+
+      if (mx >= padL && mx <= padL + aw && b >= 0 && b < nBins) {
+        if (b !== histogramHoverBin) { histogramHoverBin = b; updateSidebarHistogram(); }
+        let lo = Math.round(b * 180 / nBins);
+        let hi = Math.round((b + 1) * 180 / nBins);
+        let count = angleBins[b];
+        let pct = statTotal > 0 ? (count / statTotal * 100) : 0;
+        tooltip.innerHTML = "<strong>" + lo + "°–" + hi + "°</strong>" +
+          "<br>" + count + " / " + statTotal +
+          "<br><span class='tt-pct'>" + pct.toFixed(1) + "%</span>";
+        tooltip.style.display = "block";
+        let tw = tooltip.offsetWidth;
+        let left = e.clientX + 14;
+        if (left + tw > window.innerWidth - 8) left = e.clientX - tw - 14;
+        tooltip.style.left = left + "px";
+        tooltip.style.top = (e.clientY - 12) + "px";
+      } else {
+        if (histogramHoverBin !== -1) { histogramHoverBin = -1; updateSidebarHistogram(); }
+        tooltip.style.display = "none";
+      }
+    });
+    hCanvas.addEventListener("mouseleave", () => {
+      if (histogramHoverBin !== -1) { histogramHoverBin = -1; updateSidebarHistogram(); }
+      tooltip.style.display = "none";
+    });
+  }
 }
 
 function setupAppearanceEventListeners() {

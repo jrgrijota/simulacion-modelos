@@ -1,9 +1,12 @@
 class ThomsonTarget {
-  constructor(x, y, radius, numElectrons, isSimplified = false, currentModel = "thomson") {
+  constructor(x, y, radius, numElectrons, isSimplified = false, currentModel = "thomson", visualScale = 1.0) {
     this.pos = { x: x, y: y }; // Objeto literal de bajo coste computacional
-    this.R = radius;               
-    this.isSimplified = isSimplified; 
-    this.model = currentModel; 
+    this.R = radius;
+    // Escala visual independiente de la física: permite reducir el tamaño aparente
+    // del átomo en la lámina sin alterar R (que gobierna el potencial y el apantallamiento).
+    this.visualScale = visualScale;
+    this.isSimplified = isSimplified;
+    this.model = currentModel;
     
     // Constante de Coulomb calibrada por modelo:
     // - Rutherford (ke=40000): retrodispersa a b pequeño, decae con Z correcto.
@@ -248,6 +251,11 @@ class ThomsonTarget {
   }
 
   display() {
+    push();
+    translate(this.pos.x, this.pos.y);
+    scale(this.visualScale);
+    translate(-this.pos.x, -this.pos.y);
+
     let tInput = document.getElementById("ui-theme-select");
     let theme = tInput ? tInput.value : "dark";
     
@@ -309,5 +317,7 @@ class ThomsonTarget {
         ellipse(e.pos.x, e.pos.y, visualERadius * 2, visualERadius * 2);
       }
     }
+
+    pop();
   }
 }
