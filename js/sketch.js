@@ -18,7 +18,6 @@ let statRebound = 0;
 // Histograma de distribución angular: 18 contenedores de 10° (0°–180°).
 // Es el dato experimental clave del experimento de Geiger-Marsden.
 let angleBins = new Array(18).fill(0);
-let showHistogram = true;
 
 let hasClickedInManualMode = false;
 let isContinuousPlaying = false;
@@ -158,7 +157,6 @@ function draw() {
     }
   }
 
-  drawHistogram(themeMode);
 }
 
 // Clasifica un proyectil ya detectado: actualiza estadísticas y el histograma angular.
@@ -173,77 +171,75 @@ function recordScattering(angleDeg) {
   if (bin >= angleBins.length) bin = angleBins.length - 1;
   angleBins[bin]++;
 
-  updateTelemetryUI();
+  updateSidebarHistogram();
 }
 
-// Histograma de distribución angular superpuesto en el canvas (esquina inferior izquierda).
-// Reproduce el gráfico experimental de Geiger-Marsden: número de impactos frente al ángulo de dispersión.
-function drawHistogram(themeMode) {
-  if (!showHistogram) return;
+function updateSidebarHistogram() {
+  let hCanvas = document.getElementById("histogram-canvas");
+  if (!hCanvas) return;
 
-  let panelW = 300, panelH = 140;
-  let px = 16, py = height - panelH - 16;
+  let tInput = document.getElementById("ui-theme-select");
+  let dark = !tInput || tInput.value !== "light";
 
-  push();
+  let W = hCanvas.offsetWidth || 240;
+  hCanvas.width = W;
+  let H = hCanvas.height;
 
-  // Tarjeta de fondo
-  noStroke();
-  fill(themeMode === "light" ? color(255, 255, 255, 225) : color(20, 22, 32, 210));
-  rect(px, py, panelW, panelH, 8);
-  noFill();
-  stroke(themeMode === "light" ? color(203, 213, 225) : color(60, 66, 90));
-  strokeWeight(1);
-  rect(px, py, panelW, panelH, 8);
+  let ctx = hCanvas.getContext("2d");
+  ctx.clearRect(0, 0, W, H);
 
-  // Título
-  noStroke();
-  fill(themeMode === "light" ? color(71, 85, 105) : color(148, 163, 184));
-  textSize(11);
-  textStyle(BOLD);
-  textAlign(LEFT, TOP);
-  text("DISTRIBUCIÓN ANGULAR DE DISPERSIÓN", px + 12, py + 9);
-
-  // Geometría del área de barras
-  let padL = 12, padR = 12, padTop = 28, padBot = 20;
-  let ax = px + padL;
-  let ay = py + padTop;
-  let aw = panelW - padL - padR;
-  let ah = panelH - padTop - padBot;
+  let padL = 8, padR = 8, padTop = 20, padBot = 18;
+  let aw = W - padL - padR;
+  let ah = H - padTop - padBot;
+  let ax = padL, ay = padTop;
   let nBins = angleBins.length;
   let barW = aw / nBins;
 
   let maxBin = 1;
   for (let c of angleBins) if (c > maxBin) maxBin = c;
 
-  // Eje base
-  stroke(themeMode === "light" ? color(148, 163, 184) : color(80, 88, 110));
-  strokeWeight(1);
-  line(ax, ay + ah, ax + aw, ay + ah);
+  // Encabezado: título y contador total
+  ctx.font = "bold 10px sans-serif";
+  ctx.fillStyle = dark ? "rgba(148,163,184,1)" : "rgba(71,85,105,1)";
+  ctx.textAlign = "left";
+  ctx.fillText("ÁNGULO DE DISPERSIÓN", ax, 14);
+  ctx.font = "10px monospace";
+  ctx.textAlign = "right";
+  ctx.fillStyle = dark ? "rgba(100,120,160,1)" : "rgba(100,116,139,1)";
+  ctx.fillText("n=" + statTotal, W - padR, 14);
 
-  // Barras coloreadas por categoría (mismo código de color que los datos estadísticos)
-  noStroke();
+  // Eje base
+  ctx.strokeStyle = dark ? "rgba(80,88,110,1)" : "rgba(148,163,184,1)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(ax, ay + ah);
+  ctx.lineTo(ax + aw, ay + ah);
+  ctx.stroke();
+
+  // Barras
   for (let i = 0; i < nBins; i++) {
     let angleMid = (i + 0.5) * (180.0 / nBins);
     let h = (angleBins[i] / maxBin) * ah;
-    if (i === 0) fill(0, 255, 0);                 // Haz directo / ángulos pequeños
-    else if (angleMid <= 90.0) fill(255, 176, 0); // Dispersados
-    else fill(255, 51, 51);                        // Retrodispersión
+    if (i === 0) ctx.fillStyle = "#00ff00";
+    else if (angleMid <= 90.0) ctx.fillStyle = "#ffb000";
+    else ctx.fillStyle = "#ff3333";
     let bx = ax + i * barW;
-    rect(bx + 1, ay + ah - h, barW - 2, h, 2);
+    if (h > 0) {
+      ctx.beginPath();
+      ctx.roundRect(bx + 1, ay + ah - h, barW - 2, h, 2);
+      ctx.fill();
+    }
   }
 
-  // Etiquetas del eje angular
-  fill(themeMode === "light" ? color(100, 116, 139) : color(120, 130, 155));
-  textSize(9);
-  textStyle(NORMAL);
-  textAlign(LEFT, TOP);
-  text("0°", ax, ay + ah + 4);
-  textAlign(CENTER, TOP);
-  text("90°", ax + aw / 2, ay + ah + 4);
-  textAlign(RIGHT, TOP);
-  text("180°", ax + aw, ay + ah + 4);
-
-  pop();
+  // Etiquetas eje X
+  ctx.font = "9px sans-serif";
+  ctx.fillStyle = dark ? "rgba(120,130,155,1)" : "rgba(100,116,139,1)";
+  ctx.textAlign = "left";
+  ctx.fillText("0°", ax, ay + ah + 13);
+  ctx.textAlign = "center";
+  ctx.fillText("90°", ax + aw / 2, ay + ah + 13);
+  ctx.textAlign = "right";
+  ctx.fillText("180°", ax + aw, ay + ah + 13);
 }
 
 function mousePressed() {
@@ -256,7 +252,7 @@ function mousePressed() {
     let v0 = sSlider ? parseFloat(sSlider.value) : 10.0;
     alphas.push(new AlphaParticle(spawnX, mouseY, v0, 0));
     statTotal++;
-    updateTelemetryUI();
+    updateSidebarHistogram();
   }
 }
 
@@ -281,27 +277,10 @@ function buildEnvironment() {
   }
 }
 
-function updateTelemetryUI() {
-  let tElem = document.getElementById("stat-total");
-  let sElem = document.getElementById("stat-straight");
-  let dElem = document.getElementById("stat-deviated");
-  let rElem = document.getElementById("stat-rebound");
-  if(tElem) tElem.innerText = statTotal;
-  if (statTotal > 0) {
-    if(sElem) sElem.innerText = ((statStraight / statTotal) * 100).toFixed(1) + "%";
-    if(dElem) dElem.innerText = ((statDeviated / statTotal) * 100).toFixed(1) + "%";
-    if(rElem) rElem.innerText = ((statRebound / statTotal) * 100).toFixed(1) + "%";
-  } else {
-    if(sElem) sElem.innerText = "0%";
-    if(dElem) dElem.innerText = "0%";
-    if(rElem) rElem.innerText = "0%";
-  }
-}
-
 function resetTelemetry() {
   statTotal = 0; statStraight = 0; statDeviated = 0; statRebound = 0;
   angleBins.fill(0);
-  updateTelemetryUI();
+  updateSidebarHistogram();
 }
 
 function updateManualHintVisibility() {
@@ -368,9 +347,10 @@ function setupUIEventListeners() {
   document.getElementById("ui-btn-reset").addEventListener("click", () => {
     alphas = []; deadImpacts = []; resetTelemetry();
   });
-  let statsCard = document.getElementById("ui-panel-stats");
-  document.getElementById("ui-stats-trigger").addEventListener("click", () => {
-    statsCard.classList.toggle("is-expanded");
+  let histCard = document.getElementById("ui-panel-histogram");
+  document.getElementById("ui-histogram-trigger").addEventListener("click", () => {
+    histCard.classList.toggle("is-expanded");
+    updateSidebarHistogram();
   });
 }
 
@@ -383,12 +363,9 @@ function setupAppearanceEventListeners() {
   }
   document.getElementById("ui-theme-select").addEventListener("change", (e) => {
     document.documentElement.setAttribute("data-theme", e.target.value);
+    updateSidebarHistogram();
   });
   document.getElementById("ui-radius-electron").addEventListener("input", (e) => {
     document.getElementById("electron-radius-val").innerText = e.target.value + " px";
   });
-  let histToggle = document.getElementById("ui-toggle-histogram");
-  if (histToggle) {
-    histToggle.addEventListener("change", (e) => { showHistogram = e.target.checked; });
-  }
 }

@@ -180,7 +180,7 @@
     .collapsible-trigger-title { border-left: 3px solid #2563eb; padding-left: 6px; color: var(--text-muted); }
     .collapsible-arrow { font-size: 9px; color: var(--text-muted); transition: transform 0.2s ease; }
     .collapsible-content { max-height: 0; overflow: hidden; padding: 0 12px; transition: max-height 0.23s cubic-bezier(0.4, 0, 0.2, 1), padding 0.23s ease; }
-    .collapsible-card.is-expanded .collapsible-content { max-height: 200px; padding-bottom: 12px; }
+    .collapsible-card.is-expanded .collapsible-content { max-height: 240px; padding-bottom: 12px; }
     .collapsible-card.is-expanded .collapsible-arrow { transform: rotate(180deg); }
 
     .stat-row { display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; margin-bottom: 6px; color: var(--text-label); }
@@ -276,28 +276,13 @@
         </div>
       </div>
 
-      <div class="collapsible-card" id="ui-panel-stats">
-        <button class="collapsible-trigger" id="ui-stats-trigger">
-          <span class="collapsible-trigger-title">Datos Estadísticos</span>
+      <div class="collapsible-card is-expanded" id="ui-panel-histogram">
+        <button class="collapsible-trigger" id="ui-histogram-trigger">
+          <span class="collapsible-trigger-title">Distribución Angular</span>
           <span class="collapsible-arrow">▼</span>
         </button>
         <div class="collapsible-content">
-          <div class="stat-row">
-            <span>Proyectiles Emitidos:</span>
-            <span class="stat-val" id="stat-total" style="color: var(--text-main);">0</span>
-          </div>
-          <div class="stat-row">
-            <span>Sin Desviación (&lt;1°):</span>
-            <span class="stat-val" id="stat-straight">0%</span>
-          </div>
-          <div class="stat-row">
-            <span>Dispersados (1° - 90°):</span>
-            <span class="stat-val amber" id="stat-deviated">0%</span>
-          </div>
-          <div class="stat-row">
-            <span>Retrodispersión (&gt;90°):</span>
-            <span class="stat-val red" id="stat-rebound">0%</span>
-          </div>
+          <canvas id="histogram-canvas" height="150" style="width:100%;display:block;"></canvas>
         </div>
       </div>
 
@@ -330,8 +315,6 @@
             <label>Radio electrones <span class="data-readout" id="electron-radius-val">2 px</span></label>
             <input type="range" id="ui-radius-electron" min="1" max="10" value="2">
           </div>
-          <h3>Análisis</h3>
-          <div class="color-row"><label>Histograma de dispersión</label><input type="checkbox" id="ui-toggle-histogram" class="toggle-input" checked></div>
           <h3>Paleta</h3>
           <div class="color-row"><label>Partícula Alfa</label><input type="color" id="ui-color-alpha" class="color-picker-input" value="#00ff00"></div>
           <div class="color-row"><label>Protones</label><input type="color" id="ui-color-proton" class="color-picker-input" value="#ff0000"></div>
