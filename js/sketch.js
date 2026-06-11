@@ -92,7 +92,7 @@ function windowResized() {
 function draw() {
   let themeMode = uiCache.theme;
   
-  background(themeMode === "light" ? [248, 250, 252] : [11, 12, 16]);
+  background(themeMode === "light" ? [248, 250, 252] : themeMode === "high-contrast" ? [0, 0, 0] : [11, 12, 16]);
   
   // Geometría del detector circular — apertura izquierda alineada con la ranura del emisor
   let openHH = getOpenHH();
@@ -100,7 +100,7 @@ function draw() {
   let openX = width / 2 - detectorRadius; // borde izquierdo de la apertura
 
   // Arco detector — cubre todo menos la apertura izquierda (PI ± openAngleRad)
-  stroke(themeMode === "light" ? color(150, 170, 200) : color(50, 70, 110));
+  stroke(themeMode === "light" ? color(150, 170, 200) : themeMode === "high-contrast" ? color(255, 255, 0) : color(50, 70, 110));
   strokeWeight(2.5);
   noFill();
   arc(width / 2, height / 2, detectorRadius * 2, detectorRadius * 2,
@@ -110,9 +110,9 @@ function draw() {
   // Zona de lanzamiento (apertura izquierda) en modo manual
   if (currentTrigger === "click") {
     noStroke();
-    fill(0, 160, 255, themeMode === "light" ? 14 : 20);
+    fill(0, 100, 200, themeMode === "light" ? 55 : 20);
     rect(0, height / 2 - openHH, openX + 25, openHH * 2, 4);
-    stroke(0, 160, 255, themeMode === "light" ? 40 : 55);
+    stroke(0, 100, 200, themeMode === "light" ? 160 : 55);
     strokeWeight(1);
     for (let y = height / 2 - openHH; y < height / 2 + openHH; y += 10) {
       line(openX, y, openX, y + 5);
@@ -314,7 +314,7 @@ function drawAtomLabel(themeMode, atom) {
   let padX = 10;
   let boxW = tw + padX * 2;
   let boxH = 20;
-  let boxX = width - boxW - 14;
+  let boxX = width - boxW - 66; // margen derecho: 16 (borde) + 38 (engranaje) + 12 (separación)
   let boxY = 14;
   let labelX = boxX + boxW / 2;
   let labelY = boxY + boxH / 2;
@@ -435,7 +435,7 @@ function drawEmitter(themeMode, openX, openHH) {
   textAlign(CENTER, CENTER);
   textStyle(BOLD);
   textSize(constrain(Math.round(bodyW * 0.55), 12, 40));
-  text("α", bodyX + bodyW / 2, cy - bodyH * 0.12);
+  text("α", bodyX + bodyW / 2, cy);
 
   // Símbolo de radiactividad ☢ anclado al fondo del cuerpo
   fill(themeMode === "light" ? color(240, 180, 20, 200) : color(255, 210, 40, 180));
@@ -590,11 +590,8 @@ function buildEnvironment() {
   
   let atomRadius = 14;
   const FOIL_VISUAL_SCALE = 0.6;
-  // El paso de la rejilla usa el diámetro visual para que los átomos se toquen,
-  // mientras que el radio de física (atomRadius) se mantiene para el potencial.
   let step = Math.round(atomRadius * 2 * FOIL_VISUAL_SCALE); // 16 px
-  let lSlider = document.getElementById("ui-layers-slider");
-  let numColumnas = lSlider ? parseInt(lSlider.value) : 3;
+  let numColumnas = 3;
   let totalFoilWidth = (numColumnas - 1) * step;
   let startX = (width / 2) - (totalFoilWidth / 2);
 
@@ -628,43 +625,36 @@ function setupUIEventListeners() {
   });
   document.getElementById("ui-mode-select").addEventListener("change", (e) => {
     currentMode = e.target.value;
-    let groupLayers = document.getElementById("group-layers");
-    if (groupLayers) groupLayers.style.display = currentMode === "foil" ? "block" : "none";
     alphas = []; deadImpacts = []; resetTelemetry(); buildEnvironment();
   });
   document.getElementById("ui-trigger-select").addEventListener("change", (e) => {
     currentTrigger = e.target.value;
     let groupRate = document.getElementById("group-rate");
     let groupEnergy = document.getElementById("group-energy");
+    let groupPlaypause = document.getElementById("group-playpause");
     let playPauseBtn = document.getElementById("ui-btn-playpause");
-    let emissionHint = document.getElementById("emission-hint");
     if (currentTrigger === "click") {
       hasClickedInManualMode = false;
+      isContinuousPlaying = false;
       if (groupRate) groupRate.style.display = "none";
       if (groupEnergy) groupEnergy.style.gridColumn = "span 2";
-      if (playPauseBtn) { playPauseBtn.disabled = true; isContinuousPlaying = false; }
-      if (emissionHint) emissionHint.innerText = "Haz clic en la zona del cañón para disparar cada partícula.";
+      if (groupPlaypause) groupPlaypause.style.display = "none";
     } else {
       if (groupRate) groupRate.style.display = "block";
       if (groupEnergy) groupEnergy.style.gridColumn = "span 1";
-      if (playPauseBtn) playPauseBtn.disabled = false;
-      if (emissionHint) emissionHint.innerText = "Pulsa ▶ Play para lanzar partículas en lluvia continua.";
+      if (groupPlaypause) groupPlaypause.style.display = "block";
     }
-    let playSpan = playPauseBtn.querySelector("span");
-    if(playSpan) playSpan.innerText = "Play";
-    playPauseBtn.className = "is-paused";
+    if (playPauseBtn) {
+      playPauseBtn.classList.remove("is-on");
+      playPauseBtn.classList.add("is-off");
+    }
     alphas = []; deadImpacts = []; resetTelemetry();
   });
   let playPauseBtn = document.getElementById("ui-btn-playpause");
   playPauseBtn.addEventListener("click", () => {
     isContinuousPlaying = !isContinuousPlaying;
-    let btnText = playPauseBtn.querySelector("span");
-    if (btnText) btnText.innerText = isContinuousPlaying ? "Pausa" : "Play";
-    playPauseBtn.className = isContinuousPlaying ? "" : "is-paused";
-  });
-  document.getElementById("ui-layers-slider").addEventListener("input", (e) => {
-    document.getElementById("layers-val").innerText = e.target.value;
-    resetTelemetry(); buildEnvironment();
+    playPauseBtn.classList.toggle("is-on", isContinuousPlaying);
+    playPauseBtn.classList.toggle("is-off", !isContinuousPlaying);
   });
   document.getElementById("ui-z-slider").addEventListener("input", (e) => {
     let z = parseInt(e.target.value);

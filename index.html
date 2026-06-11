@@ -94,26 +94,49 @@
     }
 
     [data-theme="light"] {
-      --bg-body: #eaeef4;
-      --bg-container: #ffffff;
-      --bg-card: #f5f8fc;
-      --bg-card-hover: #eef2f8;
-      --bg-input: #ffffff;
-      --border-main: #d6dde8;
-      --border-strong: #b9c4d6;
-      --border-canvas: #64748b;
-      --text-main: #0f172a;
-      --text-muted: #5a6b85;
-      --text-label: #243049;
-      --accent: #2563eb;
-      --accent-strong: #1d4ed8;
-      --accent-soft: rgba(37, 99, 235, 0.10);
-      --success: #059669;
-      --success-hover: #047857;
-      --btn-secondary: #e6ebf3;
-      --btn-secondary-hover: #d4dce8;
-      --shadow-card: 0 1px 2px rgba(15,23,42,0.06);
-      --shadow-pop: 0 12px 28px -6px rgba(15,23,42,0.22);
+      --bg-body: #c8d0da;
+      --bg-container: #d8dfe8;
+      --bg-card: #cdd4de;
+      --bg-card-hover: #c2cad5;
+      --bg-input: #dce2ea;
+      --border-main: #8fa0b2;
+      --border-strong: #5f7488;
+      --border-canvas: #3a5068;
+      --text-main: #0c1a28;
+      --text-muted: #2c4258;
+      --text-label: #152437;
+      --accent: #1a52be;
+      --accent-strong: #123f9a;
+      --accent-soft: rgba(26, 82, 190, 0.16);
+      --success: #0a7a50;
+      --success-hover: #086040;
+      --btn-secondary: #bac3cf;
+      --btn-secondary-hover: #adb7c4;
+      --shadow-card: 0 1px 3px rgba(12,26,40,0.16);
+      --shadow-pop: 0 12px 28px -6px rgba(12,26,40,0.34);
+    }
+
+    [data-theme="high-contrast"] {
+      --bg-body: #000000;
+      --bg-container: #0a0a0a;
+      --bg-card: #181818;
+      --bg-card-hover: #262626;
+      --bg-input: #000000;
+      --border-main: #ffffff;
+      --border-strong: #ffffff;
+      --border-canvas: #ffff00;
+      --text-main: #ffffff;
+      --text-muted: #cccccc;
+      --text-label: #ffffff;
+      --accent: #ffff00;
+      --accent-strong: #e6e600;
+      --accent-soft: rgba(255,255,0,0.22);
+      --success: #00ff88;
+      --success-hover: #00dd77;
+      --btn-secondary: #2e2e2e;
+      --btn-secondary-hover: #3e3e3e;
+      --shadow-card: 0 0 0 1px #ffffff;
+      --shadow-pop: 0 0 0 2px #ffff00;
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -271,20 +294,6 @@
     }
 
     /* ---------- Botones ---------- */
-    .trigger-inline-buttons { margin-top: var(--group-mb); }
-    .trigger-inline-buttons button {
-      width: 100%; padding: var(--ctrl-pad-y) 12px; font-size: var(--fs-btn); font-weight: 700;
-      border-radius: 9px; border: none; cursor: pointer; color: #fff;
-      display: flex; align-items: center; justify-content: center; gap: 8px;
-      transition: background-color 0.15s ease, transform 0.08s ease;
-    }
-    .trigger-inline-buttons button:active { transform: scale(0.985); }
-    #ui-btn-playpause { background-color: var(--success); }
-    #ui-btn-playpause:hover { background-color: var(--success-hover); }
-    #ui-btn-playpause.is-paused { background-color: var(--accent-strong); }
-    #ui-btn-playpause.is-paused:hover { background-color: var(--accent); }
-    #ui-btn-playpause:disabled { background-color: var(--btn-secondary); opacity: 0.45; cursor: not-allowed; color: var(--text-muted); }
-
     .btn-card-reset {
       background-color: var(--btn-secondary); color: var(--text-main);
       width: 100%; padding: calc(var(--ctrl-pad-y) + 2px) 12px; font-size: var(--fs-btn); font-weight: 700;
@@ -294,6 +303,32 @@
     }
     .btn-card-reset:hover { background-color: var(--btn-secondary-hover); }
     .btn-card-reset:active { transform: scale(0.985); }
+
+    /* ---------- Botón toggle emisión ---------- */
+    .btn-emission-toggle {
+      width: 100%; padding: var(--ctrl-pad-y) 14px;
+      font-size: var(--fs-btn); font-weight: 700;
+      border-radius: 9px; border: 1.5px solid transparent; cursor: pointer;
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.08s ease;
+    }
+    .btn-emission-toggle:active { transform: scale(0.985); }
+    .toggle-pill {
+      width: 38px; height: 22px; border-radius: 11px; flex-shrink: 0; position: relative;
+      transition: background-color 0.18s ease;
+    }
+    .toggle-pill::after {
+      content: ""; position: absolute;
+      width: 16px; height: 16px; border-radius: 50%; top: 3px;
+      background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+      transition: left 0.18s ease;
+    }
+    .btn-emission-toggle.is-off { background-color: var(--btn-secondary); color: var(--text-muted); border-color: var(--border-main); }
+    .btn-emission-toggle.is-off .toggle-pill { background-color: var(--border-strong); }
+    .btn-emission-toggle.is-off .toggle-pill::after { left: 3px; }
+    .btn-emission-toggle.is-on { background-color: rgba(16,185,129,0.14); color: var(--success); border-color: var(--success); }
+    .btn-emission-toggle.is-on .toggle-pill { background-color: var(--success); }
+    .btn-emission-toggle.is-on .toggle-pill::after { left: 19px; }
 
     /* ---------- Tarjetas plegables ---------- */
     .collapsible-card {
@@ -467,15 +502,9 @@
           </div>
         </div>
 
-        <div class="control-group" id="group-layers" style="display: none;">
-          <label>Grosor de la lámina <span class="data-readout" id="layers-val">3</span></label>
-          <input type="range" id="ui-layers-slider" min="1" max="5" value="3">
-        </div>
-
         <div class="control-group">
           <label>Número atómico (Z) <span class="data-readout" id="z-val">14</span></label>
           <input type="range" id="ui-z-slider" min="1" max="118" value="14">
-          <p class="field-hint">Z = número de protones. Cambia el elemento químico y el tamaño del átomo.</p>
         </div>
       </div>
 
@@ -489,7 +518,6 @@
               <option value="continuous">Lluvia continua</option>
             </select>
           </div>
-          <p class="field-hint" id="emission-hint">Haz clic en la zona del cañón para disparar cada partícula.</p>
         </div>
 
         <div class="grid-asymmetric control-group">
@@ -503,15 +531,15 @@
           </div>
         </div>
 
-        <div class="trigger-inline-buttons">
-          <button id="ui-btn-playpause" disabled title="Disponible en modo lluvia continua">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-            <span>Play</span>
+        <div id="group-playpause" style="display:none; margin-top: var(--group-mb);">
+          <button id="ui-btn-playpause" class="btn-emission-toggle is-off" title="Activar o detener la emisión continua de partículas">
+            <span>Emisión continua</span>
+            <span class="toggle-pill"></span>
           </button>
         </div>
       </div>
 
-      <div class="collapsible-card is-expanded" id="ui-panel-histogram">
+      <div class="collapsible-card" id="ui-panel-histogram">
         <button class="collapsible-trigger" id="ui-histogram-trigger">
           <span class="collapsible-trigger-title">Gráfico de ángulos</span>
           <span class="collapsible-arrow">▼</span>
@@ -542,6 +570,7 @@
               <select id="ui-theme-select">
                 <option value="dark">Modo Oscuro</option>
                 <option value="light">Modo Claro</option>
+                <option value="high-contrast">Alto Contraste</option>
               </select>
             </div>
           </div>
