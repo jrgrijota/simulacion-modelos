@@ -266,13 +266,16 @@ class ThomsonTarget {
     let theme        = uiCache.theme;
     let protonColor  = uiCache.protonColor;
     let neutronColor = uiCache.neutronColor;
-    let electronColor = uiCache.electronColor;
     let visualERadius = uiCache.electronRadius;
+    // En modo claro los electrones se oscurecen para garantizar contraste sobre fondos claros
+    let electronColor = (theme === "light")
+      ? color(red(uiCache.electronColor) * 0.45, green(uiCache.electronColor) * 0.45, blue(uiCache.electronColor) * 0.65)
+      : uiCache.electronColor;
 
     if (this.model === "thomson") {
       if (!this.isSimplified) {
-        fill(255, 190, 0, theme === "light" ? 22 : 12);
-        stroke(255, 190, 0, theme === "light" ? 60 : 40);
+        fill(255, 190, 0, theme === "light" ? 55 : 12);
+        stroke(255, 190, 0, theme === "light" ? 130 : 40);
         strokeWeight(1);
         ellipse(this.pos.x, this.pos.y, this.R * 2, this.R * 2);
         // Órbitas de los anillos de electrones
@@ -285,8 +288,8 @@ class ThomsonTarget {
         drawingContext.restore();
       } else {
         if (theme === "light") {
-          fill(255, 190, 0, 45);   
-          stroke(217, 119, 6, 120); 
+          fill(255, 190, 0, 100);
+          stroke(180, 100, 0, 200);
         } else {
           fill(255, 190, 0, 28);   
           stroke(255, 215, 0, 150); 
@@ -312,8 +315,8 @@ class ThomsonTarget {
         }
       } else {
         if (theme === "light") {
-          fill(15, 23, 42, 6); 
-          stroke(15, 23, 42, 50); 
+          fill(15, 23, 42, 80);
+          stroke(15, 23, 42, 200);
         } else {
           fill(255, 255, 255, 4); 
           stroke(255, 255, 255, 65); 

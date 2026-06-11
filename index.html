@@ -1,49 +1,145 @@
 <!DOCTYPE html>
-<html lang="es" data-theme="dark">
+<html lang="es" data-theme="dark" data-ui="compact">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Simulación: Dispersión de Rutherford y Thomson</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
-  
+  <script>
+    // Aplica tema y tamaño de interfaz guardados ANTES de pintar (evita parpadeo
+    // y permite que el lienzo p5 se cree ya con el ancho de panel correcto).
+    (function () {
+      try {
+        var t = localStorage.getItem("sim-ui-theme");
+        var d = localStorage.getItem("sim-ui-density");
+        if (t) document.documentElement.setAttribute("data-theme", t);
+        if (d) document.documentElement.setAttribute("data-ui", d);
+      } catch (e) {}
+    })();
+  </script>
+
   <style>
     :root {
-      --bg-body: #12141c;
-      --bg-container: #1a1d29;
-      --bg-card: #222638;
-      --bg-input: #0f111a;
-      --border-main: #2d324a;
+      /* ----- Tema (oscuro) ----- */
+      --bg-body: #0e1018;
+      --bg-container: #161a26;
+      --bg-card: #1e2334;
+      --bg-card-hover: #252b40;
+      --bg-input: #11141f;
+      --border-main: #2b3147;
+      --border-strong: #394264;
       --border-canvas: #3f476a;
-      --text-main: #e2e8f0;
-      --text-muted: #94a3b8;
-      --text-label: #cbd5e1;
-      --btn-primary: #2563eb;
-      --btn-primary-hover: #3b82f6;
-      --btn-secondary: #334155;
-      --btn-secondary-hover: #475569;
+      --text-main: #eef2f8;
+      --text-muted: #9aa6bd;
+      --text-label: #cdd6e6;
+      --accent: #3b82f6;
+      --accent-strong: #2563eb;
+      --accent-soft: rgba(59, 130, 246, 0.14);
+      --success: #10b981;
+      --success-hover: #059669;
+      --btn-secondary: #2c3450;
+      --btn-secondary-hover: #3a456a;
+      --shadow-card: 0 1px 2px rgba(0,0,0,0.18);
+      --shadow-pop: 0 12px 28px -6px rgba(0,0,0,0.45);
+
+      /* ----- Escala de interfaz: ORDENADOR (compacta, por defecto) ----- */
+      --panel-w: 318px;
+      --panel-gap: 9px;
+      --card-pad: 12px;
+      --radius: 10px;
+      --logo-size: 38px;
+      --fs-title: 15.5px;
+      --fs-subtitle: 11.5px;
+      --fs-h2: 11px;
+      --fs-trigger: 11px;
+      --fs-label: 12px;
+      --fs-readout: 11.5px;
+      --fs-input: 13px;
+      --fs-hint: 11px;
+      --fs-info-label: 10.5px;
+      --fs-info: 12px;
+      --fs-btn: 13px;
+      --ctrl-pad-y: 8px;
+      --group-mb: 11px;
+      --slider-h: 6px;
+      --slider-thumb: 15px;
+      --gear-size: 38px;
+      --picker-size: 22px;
+    }
+
+    /* ----- Escala de interfaz: TABLET / PIZARRA (grande, táctil) ----- */
+    [data-ui="touch"] {
+      --panel-w: 388px;
+      --panel-gap: 13px;
+      --card-pad: 15px;
+      --radius: 13px;
+      --logo-size: 46px;
+      --fs-title: 18px;
+      --fs-subtitle: 13px;
+      --fs-h2: 13.5px;
+      --fs-trigger: 13.5px;
+      --fs-label: 14.5px;
+      --fs-readout: 14px;
+      --fs-input: 15.5px;
+      --fs-hint: 13px;
+      --fs-info-label: 12px;
+      --fs-info: 14.5px;
+      --fs-btn: 16px;
+      --ctrl-pad-y: 12px;
+      --group-mb: 16px;
+      --slider-h: 9px;
+      --slider-thumb: 24px;
+      --gear-size: 48px;
+      --picker-size: 32px;
     }
 
     [data-theme="light"] {
-      --bg-body: #f1f5f9;
-      --bg-container: #ffffff;
-      --bg-card: #f8fafc;
-      --bg-input: #e2e8f0;
-      --border-main: #cbd5e1;
-      --border-canvas: #64748b;
-      --text-main: #0f172a;
-      --text-muted: #475569;
-      --text-label: #1e293b;
-      --btn-primary: #1d4ed8;
-      --btn-primary-hover: #2563eb;
-      --btn-secondary: #e2e8f0;
-      --btn-secondary-hover: #cbd5e1;
+      --bg-body: #c8d0da;
+      --bg-container: #d8dfe8;
+      --bg-card: #cdd4de;
+      --bg-card-hover: #c2cad5;
+      --bg-input: #dce2ea;
+      --border-main: #8fa0b2;
+      --border-strong: #5f7488;
+      --border-canvas: #3a5068;
+      --text-main: #0c1a28;
+      --text-muted: #2c4258;
+      --text-label: #152437;
+      --accent: #1a52be;
+      --accent-strong: #123f9a;
+      --accent-soft: rgba(26, 82, 190, 0.16);
+      --success: #0a7a50;
+      --success-hover: #086040;
+      --btn-secondary: #bac3cf;
+      --btn-secondary-hover: #adb7c4;
+      --shadow-card: 0 1px 3px rgba(12,26,40,0.16);
+      --shadow-pop: 0 12px 28px -6px rgba(12,26,40,0.34);
     }
 
-    *, *::before, *::after {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
+    [data-theme="high-contrast"] {
+      --bg-body: #000000;
+      --bg-container: #0a0a0a;
+      --bg-card: #181818;
+      --bg-card-hover: #262626;
+      --bg-input: #000000;
+      --border-main: #ffffff;
+      --border-strong: #ffffff;
+      --border-canvas: #ffff00;
+      --text-main: #ffffff;
+      --text-muted: #cccccc;
+      --text-label: #ffffff;
+      --accent: #ffff00;
+      --accent-strong: #e6e600;
+      --accent-soft: rgba(255,255,0,0.22);
+      --success: #00ff88;
+      --success-hover: #00dd77;
+      --btn-secondary: #2e2e2e;
+      --btn-secondary-hover: #3e3e3e;
+      --shadow-card: 0 0 0 1px #ffffff;
+      --shadow-pop: 0 0 0 2px #ffff00;
     }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -61,163 +157,286 @@
 
     .simulation-container {
       display: grid;
-      grid-template-columns: 340px 1fr;
+      grid-template-columns: var(--panel-w) 1fr;
       gap: 20px;
       width: 100%;
-      max-width: 1280px;
+      max-width: 1360px;
       height: calc(100vh - 32px);
       min-height: 560px;
       background-color: var(--bg-container);
       border: 1px solid var(--border-main);
-      border-radius: 12px;
-      padding: 16px;
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: 0 24px 50px -12px rgba(0, 0, 0, 0.35);
     }
 
     .control-panel {
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: var(--panel-gap);
       height: 100%;
       max-height: 100%;
       overflow-y: auto;
-      padding-right: 6px;
+      padding-right: 8px;
     }
-
-    .control-panel::-webkit-scrollbar { width: 6px; }
-    .control-panel::-webkit-scrollbar-thumb { background: var(--border-main); border-radius: 4px; }
+    .control-panel::-webkit-scrollbar { width: 8px; }
+    .control-panel::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
     .control-panel::-webkit-scrollbar-thumb:hover { background: var(--border-canvas); }
     .control-panel::-webkit-scrollbar-track { background: transparent; }
 
+    /* ---------- Cabecera / identidad ---------- */
+    .app-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 2px 2px 10px;
+      border-bottom: 1px solid var(--border-main);
+      flex-shrink: 0;
+    }
+    .app-logo {
+      width: var(--logo-size); height: var(--logo-size); flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: calc(var(--logo-size) * 0.58); color: #fff;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
+      border-radius: calc(var(--radius) + 1px);
+      box-shadow: 0 4px 12px -2px var(--accent-soft);
+    }
+    .app-title { font-size: var(--fs-title); font-weight: 800; letter-spacing: -0.01em; line-height: 1.15; }
+    .app-subtitle { font-size: var(--fs-subtitle); color: var(--text-muted); margin-top: 2px; }
+
+    /* ---------- Tarjetas ---------- */
     .control-card {
       background-color: var(--bg-card);
       border: 1px solid var(--border-main);
-      border-radius: 8px;
-      padding: 12px;
+      border-radius: var(--radius);
+      padding: var(--card-pad);
+      box-shadow: var(--shadow-card);
     }
-
     .control-card h2 {
-      font-size: 11px;
-      font-weight: 700;
+      font-size: var(--fs-h2);
+      font-weight: 800;
       text-transform: uppercase;
-      letter-spacing: 0.08em;
+      letter-spacing: 0.06em;
       color: var(--text-muted);
-      margin-bottom: 8px;
-      border-left: 3px solid #2563eb;
-      padding-left: 6px;
+      margin-bottom: var(--group-mb);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .control-card h2::before {
+      content: "";
+      width: 4px; height: 14px;
+      background: var(--accent);
+      border-radius: 3px;
     }
 
-    .grid-2col {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
+    .grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .grid-asymmetric { display: grid; grid-template-columns: 0.82fr 1.18fr; gap: 12px; }
 
-    .grid-asymmetric {
-      display: grid;
-      grid-template-columns: 0.82fr 1.18fr;
-      gap: 10px;
-    }
-
-    .select-wrapper {
-      position: relative;
-      width: 100%;
-    }
+    .select-wrapper { position: relative; width: 100%; }
     .select-wrapper::after {
-      content: "▼";
-      font-size: 8px;
-      color: var(--text-muted);
-      position: absolute;
-      right: 10px;
-      top: 50%;
-      transform: translateY(-50%);
-      pointer-events: none;
+      content: "▼"; font-size: 9px; color: var(--text-muted);
+      position: absolute; right: 12px; top: 50%;
+      transform: translateY(-50%); pointer-events: none;
     }
 
-    .control-group { margin-bottom: 8px; }
+    .control-group { margin-bottom: var(--group-mb); }
     .control-group:last-child { margin-bottom: 0; }
-    
-    label { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--text-label); margin-bottom: 4px; white-space: nowrap; }
-    .data-readout { font-family: monospace; font-weight: bold; color: #2563eb; background-color: var(--bg-body); padding: 1px 4px; border-radius: 3px; font-size: 10.5px; }
+
+    label {
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: var(--fs-label); font-weight: 600; color: var(--text-label);
+      margin-bottom: 6px; white-space: nowrap; gap: 8px;
+    }
+    .data-readout {
+      font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+      font-weight: 700; color: var(--accent);
+      background-color: var(--accent-soft);
+      padding: 2px 8px; border-radius: 6px; font-size: var(--fs-readout);
+    }
+    .field-hint { font-size: var(--fs-hint); color: var(--text-muted); margin-top: 7px; line-height: 1.45; }
 
     input[type="range"], select {
       width: 100%;
       background-color: var(--bg-input);
       border: 1px solid var(--border-main);
       color: var(--text-main);
-      padding: 6px 20px 6px 8px;
-      font-size: 12.5px;
-      border-radius: 6px;
+      font-size: var(--fs-input);
+      border-radius: 8px;
       outline: none;
       -webkit-appearance: none;
       appearance: none;
     }
-
-    input[type="range"] { height: 6px; padding: 0; }
-    input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 11px; height: 11px; border-radius: 50%; background: #2563eb; cursor: pointer; }
-
-    .trigger-inline-buttons { margin-top: 10px; }
-    .trigger-inline-buttons button {
-      width: 100%; padding: 8px; font-size: 12.5px; font-weight: 600; border-radius: 6px; border: none; cursor: pointer;
-      display: flex; align-items: center; justify-content: center; gap: 6px; transition: background-color 0.15s ease;
+    select { padding: var(--ctrl-pad-y) 32px var(--ctrl-pad-y) 12px; cursor: pointer; font-weight: 600; transition: border-color 0.15s ease; }
+    select:hover { border-color: var(--border-strong); }
+    select:focus-visible, input:focus-visible, button:focus-visible {
+      border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft);
     }
 
-    #ui-btn-playpause { background-color: #10b981; color: white; }
-    #ui-btn-playpause:hover { background-color: #059669; }
-    #ui-btn-playpause.is-paused { background-color: #2563eb; }
-    #ui-btn-playpause.is-paused:hover { background-color: #1d4ed8; }
-    #ui-btn-playpause:disabled { background-color: var(--btn-secondary); opacity: 0.3; cursor: not-allowed; color: var(--text-muted); }
-    
-    .btn-card-reset { background-color: var(--btn-secondary); color: var(--text-main); width: 100%; padding: 10px; font-size: 13px; font-weight: 600; border-radius: 6px; border: none; cursor: pointer; transition: background-color 0.15s ease;}
+    /* Sliders — la pista y el pulgar crecen en modo táctil */
+    input[type="range"] {
+      height: var(--slider-h); padding: 0; border: none;
+      background: var(--bg-input);
+      border-radius: 6px; cursor: pointer;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none; appearance: none;
+      width: var(--slider-thumb); height: var(--slider-thumb); border-radius: 50%;
+      background: var(--accent); border: 3px solid var(--bg-card);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.35); cursor: pointer;
+      transition: transform 0.12s ease, background 0.12s ease;
+    }
+    input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.15); background: var(--accent-strong); }
+    input[type="range"]::-moz-range-thumb {
+      width: var(--slider-thumb); height: var(--slider-thumb); border-radius: 50%;
+      background: var(--accent); border: 3px solid var(--bg-card);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.35); cursor: pointer;
+    }
+
+    /* ---------- Botones ---------- */
+    .btn-card-reset {
+      background-color: var(--btn-secondary); color: var(--text-main);
+      width: 100%; padding: calc(var(--ctrl-pad-y) + 2px) 12px; font-size: var(--fs-btn); font-weight: 700;
+      border-radius: 9px; border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: background-color 0.15s ease, transform 0.08s ease;
+    }
     .btn-card-reset:hover { background-color: var(--btn-secondary-hover); }
+    .btn-card-reset:active { transform: scale(0.985); }
 
-    .collapsible-card { background-color: var(--bg-card); border: 1px solid var(--border-main); border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; flex-shrink: 0; }
-    .collapsible-trigger {
-      width: 100%; background: none; border: none; color: var(--text-main); padding: 12px;
-      display: flex; justify-content: space-between; align-items: center; cursor: pointer;
-      font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+    /* ---------- Botón toggle emisión ---------- */
+    .btn-emission-toggle {
+      width: 100%; padding: var(--ctrl-pad-y) 14px;
+      font-size: var(--fs-btn); font-weight: 700;
+      border-radius: 9px; border: 1.5px solid transparent; cursor: pointer;
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.08s ease;
     }
-    .collapsible-trigger-title { border-left: 3px solid #2563eb; padding-left: 6px; color: var(--text-muted); }
-    .collapsible-arrow { font-size: 9px; color: var(--text-muted); transition: transform 0.2s ease; }
-    .collapsible-content { max-height: 0; overflow: hidden; padding: 0 12px; transition: max-height 0.23s cubic-bezier(0.4, 0, 0.2, 1), padding 0.23s ease; }
-    .collapsible-card.is-expanded .collapsible-content { max-height: 240px; padding-bottom: 12px; }
-    #ui-panel-info.is-expanded .collapsible-content { max-height: 420px; }
-    .info-block { margin-bottom: 9px; }
-    .info-block:last-child { margin-bottom: 0; }
-    .info-label { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: #2563eb; margin-bottom: 3px; }
-    .info-text { font-size: 11px; line-height: 1.55; color: var(--text-label); }
+    .btn-emission-toggle:active { transform: scale(0.985); }
+    .toggle-pill {
+      width: 38px; height: 22px; border-radius: 11px; flex-shrink: 0; position: relative;
+      transition: background-color 0.18s ease;
+    }
+    .toggle-pill::after {
+      content: ""; position: absolute;
+      width: 16px; height: 16px; border-radius: 50%; top: 3px;
+      background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+      transition: left 0.18s ease;
+    }
+    .btn-emission-toggle.is-off { background-color: var(--btn-secondary); color: var(--text-muted); border-color: var(--border-main); }
+    .btn-emission-toggle.is-off .toggle-pill { background-color: var(--border-strong); }
+    .btn-emission-toggle.is-off .toggle-pill::after { left: 3px; }
+    .btn-emission-toggle.is-on { background-color: rgba(16,185,129,0.14); color: var(--success); border-color: var(--success); }
+    .btn-emission-toggle.is-on .toggle-pill { background-color: var(--success); }
+    .btn-emission-toggle.is-on .toggle-pill::after { left: 19px; }
+
+    /* ---------- Tarjetas plegables ---------- */
+    .collapsible-card {
+      background-color: var(--bg-card); border: 1px solid var(--border-main);
+      border-radius: var(--radius); overflow: hidden;
+      display: flex; flex-direction: column; flex-shrink: 0;
+      box-shadow: var(--shadow-card);
+    }
+    .collapsible-trigger {
+      width: 100%; background: none; border: none; color: var(--text-muted); padding: var(--card-pad);
+      display: flex; justify-content: space-between; align-items: center; cursor: pointer;
+      font-weight: 800; font-size: var(--fs-trigger); text-transform: uppercase; letter-spacing: 0.06em;
+      transition: color 0.15s ease;
+    }
+    .collapsible-trigger:hover { color: var(--text-main); }
+    .collapsible-trigger-title { display: flex; align-items: center; gap: 8px; }
+    .collapsible-trigger-title::before {
+      content: ""; width: 4px; height: 14px; background: var(--accent); border-radius: 3px;
+    }
+    #ui-info-trigger .collapsible-trigger-title::before {
+      content: "?"; width: 19px; height: 19px; color: #fff; background: var(--accent);
+      border-radius: 50%; font-size: 12px; display: flex; align-items: center; justify-content: center; font-weight: 800;
+    }
+    .collapsible-arrow { font-size: 10px; color: var(--text-muted); transition: transform 0.2s ease; }
+    .collapsible-content {
+      max-height: 0; overflow: hidden; padding: 0 var(--card-pad);
+      transition: max-height 0.25s cubic-bezier(0.4, 0, 0.2, 1), padding 0.25s ease;
+    }
+    .collapsible-card.is-expanded .collapsible-content { max-height: 300px; padding-bottom: var(--card-pad); }
+    #ui-panel-info.is-expanded .collapsible-content { max-height: 620px; }
     .collapsible-card.is-expanded .collapsible-arrow { transform: rotate(180deg); }
 
-    .stat-row { display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; margin-bottom: 6px; color: var(--text-label); }
-    .stat-row:last-child { margin-bottom: 0; }
-    .stat-val { font-family: monospace; font-weight: bold; color: #00ff00; }
-    .stat-val.amber { color: #ffb000; }
-    .stat-val.red { color: #ff3333; }
+    .info-block { margin-bottom: 12px; }
+    .info-block:last-child { margin-bottom: 0; }
+    .info-label {
+      font-size: var(--fs-info-label); font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;
+      color: var(--accent); margin-bottom: 4px;
+    }
+    .info-text { font-size: var(--fs-info); line-height: 1.6; color: var(--text-label); }
+    .info-text strong { color: var(--text-main); }
 
-    .canvas-area { position: relative; width: 100%; height: 100%; background-color: var(--bg-input); border-radius: 8px; border: 1px solid var(--border-canvas); overflow: hidden; }
+    /* ---------- Lienzo ---------- */
+    .canvas-area {
+      position: relative; width: 100%; height: 100%;
+      background-color: var(--bg-input); border-radius: var(--radius);
+      border: 1px solid var(--border-canvas); overflow: hidden;
+    }
     #canvas-holder { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; }
 
-    .manual-hint-banner { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); background-color: rgba(37, 99, 235, 0.92); color: #ffffff; padding: 8px 16px; font-size: 12px; font-weight: 600; border-radius: 6px; z-index: 90; pointer-events: none; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: opacity 0.2s ease; white-space: nowrap; display: flex; align-items: center; gap: 8px; }
-
-    .theme-dropdown-container { position: absolute; top: 14px; right: 14px; z-index: 100; }
-    .dropdown-gear-btn { background-color: var(--bg-card); border: 1px solid var(--border-main); color: var(--text-main); width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-    .dropdown-card { display: none; position: absolute; top: calc(100% + 6px); right: 0; width: 260px; background-color: var(--bg-card); border: 1px solid var(--border-main); border-radius: 8px; padding: 14px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3); }
+    /* ---------- Ajustes (engranaje) ---------- */
+    .theme-dropdown-container { position: absolute; top: 16px; right: 16px; z-index: 100; }
+    .dropdown-gear-btn {
+      background-color: var(--bg-card); border: 1px solid var(--border-main); color: var(--text-main);
+      width: var(--gear-size); height: var(--gear-size); border-radius: 50%; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: var(--shadow-pop); transition: background-color 0.15s ease, transform 0.15s ease;
+    }
+    .dropdown-gear-btn:hover { background-color: var(--bg-card-hover); transform: rotate(30deg); }
+    .dropdown-gear-btn svg { width: 50%; height: 50%; }
+    .dropdown-card {
+      display: none; position: absolute; top: calc(100% + 8px); right: 0; width: 290px;
+      background-color: var(--bg-card); border: 1px solid var(--border-main);
+      border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow-pop);
+    }
     .theme-dropdown-container.is-active .dropdown-card { display: block; }
-    .color-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 11px; }
-    .color-picker-input { width: 20px; height: 20px; border: none; cursor: pointer; background: none; -webkit-appearance: none; appearance: none; }
-    .color-picker-input::-webkit-color-swatch { border: 1px solid var(--border-main); border-radius: 50%; }
-    .toggle-input { width: 16px; height: 16px; cursor: pointer; accent-color: #2563eb; }
+    .dropdown-card h3 {
+      font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--text-muted); margin-bottom: 9px;
+    }
+    .dropdown-card h3:not(:first-child) { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border-main); }
+    .dropdown-card .control-group { margin-bottom: 12px; }
+    .dropdown-card label { font-size: 12.5px; }
+    .dropdown-card .data-readout { font-size: 12px; }
+    .dropdown-card select, .dropdown-card input[type="range"] { font-size: 13.5px; }
+    .dropdown-card select { padding: 9px 32px 9px 12px; }
+    .dropdown-card input[type="range"] { height: 6px; }
+    .dropdown-card input[type="range"]::-webkit-slider-thumb { width: 16px; height: 16px; }
+    .dropdown-card input[type="range"]::-moz-range-thumb { width: 16px; height: 16px; }
+    .color-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; }
+    .color-row {
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 12.5px; color: var(--text-label); font-weight: 600;
+    }
+    .color-row label { margin: 0; font-size: 12.5px; }
+    .color-picker-input { width: 26px; height: 26px; border: none; cursor: pointer; background: none; -webkit-appearance: none; appearance: none; padding: 0; }
+    .color-picker-input::-webkit-color-swatch-wrapper { padding: 0; }
+    .color-picker-input::-webkit-color-swatch { border: 1px solid var(--border-strong); border-radius: 50%; }
+    .color-picker-input::-moz-color-swatch { border: 1px solid var(--border-strong); border-radius: 50%; }
 
+    /* ---------- Tooltip histograma ---------- */
     .histogram-tooltip {
       position: fixed; z-index: 200; display: none; pointer-events: none;
-      background-color: var(--bg-card); border: 1px solid var(--border-main);
-      color: var(--text-main); padding: 6px 9px; border-radius: 6px;
-      font-size: 11px; line-height: 1.5; font-family: monospace; text-align: center;
-      white-space: nowrap; box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+      background-color: var(--bg-card); border: 1px solid var(--border-strong);
+      color: var(--text-main); padding: 7px 11px; border-radius: 8px;
+      font-size: 12px; line-height: 1.5; font-family: ui-monospace, Menlo, Consolas, monospace; text-align: center;
+      white-space: nowrap; box-shadow: var(--shadow-pop);
     }
-    .histogram-tooltip .tt-pct { color: #2563eb; font-weight: bold; }
+    .histogram-tooltip .tt-pct { color: var(--accent); font-weight: bold; }
 
-    .btn-container { margin-top: auto; padding-bottom: 2px; flex-shrink: 0; }
+    .btn-container { margin-top: auto; padding-top: 2px; flex-shrink: 0; }
+
+    /* ---------- Responsivo ---------- */
+    @media (max-width: 820px) {
+      body { overflow: auto; align-items: flex-start; }
+      .simulation-container { grid-template-columns: 1fr; height: auto; min-height: 0; }
+      .control-panel { overflow: visible; max-height: none; padding-right: 0; }
+      .canvas-area { aspect-ratio: 4 / 3; height: auto; }
+    }
   </style>
 </head>
 <body>
@@ -225,40 +444,48 @@
   <div class="simulation-container">
     <div class="control-panel">
 
+      <header class="app-header">
+        <div class="app-logo" aria-hidden="true">⚛</div>
+        <div>
+          <h1 class="app-title">Dispersión de partículas α</h1>
+          <p class="app-subtitle">Experimento de Rutherford y Geiger-Marsden</p>
+        </div>
+      </header>
+
       <div class="collapsible-card" id="ui-panel-info">
         <button class="collapsible-trigger" id="ui-info-trigger">
-          <span class="collapsible-trigger-title">Contexto Experimental</span>
+          <span class="collapsible-trigger-title">Guía rápida</span>
           <span class="collapsible-arrow">▼</span>
         </button>
         <div class="collapsible-content">
           <div class="info-block">
-            <div class="info-label">¿Qué se simula?</div>
-            <p class="info-text">Partículas alfa (núcleo de He-4: 2p&nbsp;+&nbsp;2n) son lanzadas contra una lámina metálica ultradelgada. El ángulo de desviación revela cómo está distribuida la carga eléctrica dentro del átomo.</p>
+            <div class="info-label">¿Qué estamos viendo?</div>
+            <p class="info-text">Un cañón lanza partículas alfa (núcleo de helio: 2&nbsp;protones&nbsp;+&nbsp;2&nbsp;neutrones) contra una lámina de metal finísima. El <strong>ángulo con el que rebotan</strong> nos dice cómo se reparte la carga dentro del átomo.</p>
           </div>
           <div class="info-block">
-            <div class="info-label">Modelos atómicos</div>
-            <p class="info-text"><strong>Thomson</strong> (budín de pasas): carga positiva difusa por toda la esfera → deflexiones pequeñas, siempre &lt;&nbsp;5°.<br>
-            <strong>Rutherford</strong> (nuclear): carga concentrada en un núcleo diminuto → la mayoría pasan rectas, pero unas pocas rebotan casi 180°.</p>
+            <div class="info-label">Los dos modelos</div>
+            <p class="info-text"><strong>Thomson</strong> ("budín de pasas"): la carga positiva está repartida por toda la esfera → las partículas apenas se desvían (siempre &lt;&nbsp;5°).<br>
+            <strong>Rutherford</strong> (nuclear): la carga se concentra en un núcleo diminuto → casi todas pasan rectas, pero unas pocas rebotan casi 180°.</p>
           </div>
           <div class="info-block">
-            <div class="info-label">Modos de visualización</div>
-            <p class="info-text"><strong>Átomo</strong>: sigue partículas individuales e inspecciona la trayectoria.<br>
-            <strong>Lámina</strong>: acumula estadística de dispersión a través de muchos átomos.</p>
+            <div class="info-label">Las dos vistas</div>
+            <p class="info-text"><strong>Átomo</strong>: observa la trayectoria de cada partícula con detalle.<br>
+            <strong>Lámina</strong>: lanza muchas y acumula estadísticas reales del experimento.</p>
           </div>
           <div class="info-block">
-            <div class="info-label">Histograma angular</div>
-            <p class="info-text">Distribución de partículas detectadas por ángulo (0°–180°). La diferencia entre modelos en los ángulos grandes es la prueba experimental que llevó al descubrimiento del núcleo atómico.</p>
+            <div class="info-label">El gráfico de ángulos</div>
+            <p class="info-text">Cuenta cuántas partículas se detectan en cada ángulo (0°–180°). La diferencia entre los dos modelos en los ángulos grandes es la prueba que reveló la existencia del núcleo atómico.</p>
           </div>
         </div>
       </div>
 
       <div class="control-card">
-        <h2>Paradigma Atómico</h2>
+        <h2>El átomo</h2>
         <div class="grid-2col control-group">
           <div>
-            <label>Modelo atómico</label>
+            <label>Modelo</label>
             <div class="select-wrapper">
-              <select id="ui-atom-model">
+              <select id="ui-atom-model" title="Cómo se reparte la carga dentro del átomo">
                 <option value="thomson">Thomson</option>
                 <option value="rutherford">Rutherford</option>
               </select>
@@ -267,98 +494,107 @@
           <div>
             <label>Vista</label>
             <div class="select-wrapper">
-              <select id="ui-mode-select">
+              <select id="ui-mode-select" title="Un átomo aislado o una lámina completa">
                 <option value="atom">Átomo</option>
                 <option value="foil">Lámina</option>
               </select>
             </div>
           </div>
         </div>
-        
-        <div class="control-group" id="group-layers" style="display: none;">
-          <label>Espesor <span class="data-readout" id="layers-val">3</span></label>
-          <input type="range" id="ui-layers-slider" min="1" max="5" value="3">
-        </div>
-        
+
         <div class="control-group">
-          <label>Carga (Z) <span class="data-readout" id="z-val">14</span></label>
+          <label>Número atómico (Z) <span class="data-readout" id="z-val">14</span></label>
           <input type="range" id="ui-z-slider" min="1" max="118" value="14">
         </div>
       </div>
 
       <div class="control-card">
-        <h2>Lógica de Disparo</h2>
+        <h2>Lanzamiento</h2>
         <div class="control-group">
-          <label>Emisión</label>
+          <label>Modo de emisión</label>
           <div class="select-wrapper">
-            <select id="ui-trigger-select">
-              <option value="click">Manual (Clic)</option>
-              <option value="continuous">Ráfaga Continua</option>
+            <select id="ui-trigger-select" title="Lanzar de una en una o en lluvia continua">
+              <option value="click">Una a una (clic)</option>
+              <option value="continuous">Lluvia continua</option>
             </select>
           </div>
         </div>
-        
+
         <div class="grid-asymmetric control-group">
           <div id="group-rate" style="display: none;">
-            <label>Flujo <span class="data-readout" id="rate-val">20</span></label>
+            <label>Ritmo <span class="data-readout" id="rate-val">20</span></label>
             <input type="range" id="ui-rate-slider" min="1" max="60" value="20">
           </div>
           <div id="group-energy" style="grid-column: span 2;">
-            <label>Energía de la partícula α <span class="data-readout" id="speed-val">10.0</span></label>
+            <label>Energía (velocidad α) <span class="data-readout" id="speed-val">10.0</span></label>
             <input type="range" id="ui-speed-slider" min="4" max="16" step="0.5" value="10">
           </div>
         </div>
-        
-        <div class="trigger-inline-buttons">
-          <button id="ui-btn-playpause" disabled>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-            <span>Play</span>
+
+        <div id="group-playpause" style="display:none; margin-top: var(--group-mb);">
+          <button id="ui-btn-playpause" class="btn-emission-toggle is-off" title="Activar o detener la emisión continua de partículas">
+            <span>Emisión continua</span>
+            <span class="toggle-pill"></span>
           </button>
         </div>
       </div>
 
-      <div class="collapsible-card is-expanded" id="ui-panel-histogram">
+      <div class="collapsible-card" id="ui-panel-histogram">
         <button class="collapsible-trigger" id="ui-histogram-trigger">
-          <span class="collapsible-trigger-title">Distribución Angular</span>
+          <span class="collapsible-trigger-title">Gráfico de ángulos</span>
           <span class="collapsible-arrow">▼</span>
         </button>
         <div class="collapsible-content">
-          <canvas id="histogram-canvas" height="150" style="width:100%;display:block;"></canvas>
+          <canvas id="histogram-canvas" height="170" style="width:100%;display:block;"></canvas>
         </div>
       </div>
 
       <div class="btn-container">
-        <button id="ui-btn-reset" class="btn-clear btn-card-reset">Limpiar Pantalla y Datos</button>
+        <button id="ui-btn-reset" class="btn-card-reset" title="Borra las partículas y reinicia el gráfico">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+          <span>Reiniciar</span>
+        </button>
       </div>
     </div>
 
     <div class="canvas-area">
-      <div id="ui-manual-hint" class="manual-hint-banner" style="display:none;"></div>
-
       <div class="theme-dropdown-container" id="ui-dropdown-container">
-        <button class="dropdown-gear-btn" id="ui-dropdown-trigger">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <button class="dropdown-gear-btn" id="ui-dropdown-trigger" title="Apariencia y colores" aria-label="Apariencia y colores">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         </button>
         <div class="dropdown-card">
-          <h3>Estilo de Interfaz</h3>
+          <h3>Apariencia</h3>
           <div class="control-group">
+            <label>Tema</label>
             <div class="select-wrapper">
               <select id="ui-theme-select">
                 <option value="dark">Modo Oscuro</option>
                 <option value="light">Modo Claro</option>
+                <option value="high-contrast">Alto Contraste</option>
               </select>
             </div>
           </div>
-          <h3>Escala Gráfica</h3>
           <div class="control-group">
-            <label>Radio electrones <span class="data-readout" id="electron-radius-val">2 px</span></label>
+            <label>Tamaño de interfaz</label>
+            <div class="select-wrapper">
+              <select id="ui-density-select" title="Controles compactos para ratón o grandes para pantalla táctil">
+                <option value="compact">Ordenador</option>
+                <option value="touch">Tablet / Pizarra digital</option>
+              </select>
+            </div>
+          </div>
+          <h3>Tamaño del dibujo</h3>
+          <div class="control-group">
+            <label>Radio de los electrones <span class="data-readout" id="electron-radius-val">2 px</span></label>
             <input type="range" id="ui-radius-electron" min="1" max="10" value="2">
           </div>
-          <h3>Paleta</h3>
-          <div class="color-row"><label>Partícula Alfa</label><input type="color" id="ui-color-alpha" class="color-picker-input" value="#00ff00"></div>
-          <div class="color-row"><label>Protones</label><input type="color" id="ui-color-proton" class="color-picker-input" value="#ff0000"></div>
-          <div class="color-row"><label>Neutrones</label><input type="color" id="ui-color-neutron" class="color-picker-input" value="#aaaaaa"></div>
-          <div class="color-row"><label>Electrones</label><input type="color" id="ui-color-electron" class="color-picker-input" value="#00a0ff"></div>
+          <h3>Colores</h3>
+          <div class="color-grid">
+            <div class="color-row"><label>Partícula α</label><input type="color" id="ui-color-alpha" class="color-picker-input" value="#00ff00"></div>
+            <div class="color-row"><label>Protones</label><input type="color" id="ui-color-proton" class="color-picker-input" value="#ff0000"></div>
+            <div class="color-row"><label>Neutrones</label><input type="color" id="ui-color-neutron" class="color-picker-input" value="#aaaaaa"></div>
+            <div class="color-row"><label>Electrones</label><input type="color" id="ui-color-electron" class="color-picker-input" value="#00a0ff"></div>
+          </div>
         </div>
       </div>
       <div id="canvas-holder"></div>

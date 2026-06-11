@@ -92,7 +92,7 @@ function windowResized() {
 function draw() {
   let themeMode = uiCache.theme;
   
-  background(themeMode === "light" ? [248, 250, 252] : [11, 12, 16]);
+  background(themeMode === "light" ? [248, 250, 252] : themeMode === "high-contrast" ? [0, 0, 0] : [11, 12, 16]);
   
   // Geometría del detector circular — apertura izquierda alineada con la ranura del emisor
   let openHH = getOpenHH();
@@ -100,7 +100,7 @@ function draw() {
   let openX = width / 2 - detectorRadius; // borde izquierdo de la apertura
 
   // Arco detector — cubre todo menos la apertura izquierda (PI ± openAngleRad)
-  stroke(themeMode === "light" ? color(150, 170, 200) : color(50, 70, 110));
+  stroke(themeMode === "light" ? color(150, 170, 200) : themeMode === "high-contrast" ? color(255, 255, 0) : color(50, 70, 110));
   strokeWeight(2.5);
   noFill();
   arc(width / 2, height / 2, detectorRadius * 2, detectorRadius * 2,
@@ -110,9 +110,9 @@ function draw() {
   // Zona de lanzamiento (apertura izquierda) en modo manual
   if (currentTrigger === "click") {
     noStroke();
-    fill(0, 160, 255, themeMode === "light" ? 14 : 20);
+    fill(0, 100, 200, themeMode === "light" ? 55 : 20);
     rect(0, height / 2 - openHH, openX + 25, openHH * 2, 4);
-    stroke(0, 160, 255, themeMode === "light" ? 40 : 55);
+    stroke(0, 100, 200, themeMode === "light" ? 160 : 55);
     strokeWeight(1);
     for (let y = height / 2 - openHH; y < height / 2 + openHH; y += 10) {
       line(openX, y, openX, y + 5);
@@ -314,7 +314,7 @@ function drawAtomLabel(themeMode, atom) {
   let padX = 10;
   let boxW = tw + padX * 2;
   let boxH = 20;
-  let boxX = width - boxW - 14;
+  let boxX = width - boxW - 66; // margen derecho: 16 (borde) + 38 (engranaje) + 12 (separación)
   let boxY = 14;
   let labelX = boxX + boxW / 2;
   let labelY = boxY + boxH / 2;
@@ -435,7 +435,7 @@ function drawEmitter(themeMode, openX, openHH) {
   textAlign(CENTER, CENTER);
   textStyle(BOLD);
   textSize(constrain(Math.round(bodyW * 0.55), 12, 40));
-  text("α", bodyX + bodyW / 2, cy - bodyH * 0.12);
+  text("α", bodyX + bodyW / 2, cy);
 
   // Símbolo de radiactividad ☢ anclado al fondo del cuerpo
   fill(themeMode === "light" ? color(240, 180, 20, 200) : color(255, 210, 40, 180));
@@ -491,8 +491,7 @@ function updateSidebarHistogram() {
   let hCanvas = document.getElementById("histogram-canvas");
   if (!hCanvas) return;
 
-  let tInput = document.getElementById("ui-theme-select");
-  let dark = !tInput || tInput.value !== "light";
+  let dark = uiCache.theme !== "light";
 
   let W = hCanvas.offsetWidth || 240;
   hCanvas.width = W;
@@ -501,7 +500,7 @@ function updateSidebarHistogram() {
   let ctx = hCanvas.getContext("2d");
   ctx.clearRect(0, 0, W, H);
 
-  let padL = 8, padR = 8, padTop = 20, padBot = 18;
+  let padL = 8, padR = 8, padTop = 26, padBot = 22;
   let aw = W - padL - padR;
   let ah = H - padTop - padBot;
   let ax = padL, ay = padTop;
@@ -512,14 +511,14 @@ function updateSidebarHistogram() {
   for (let c of angleBins) if (c > maxBin) maxBin = c;
 
   // Encabezado: título y contador total
-  ctx.font = "bold 10px sans-serif";
+  ctx.font = "bold 12px sans-serif";
   ctx.fillStyle = dark ? "rgba(148,163,184,1)" : "rgba(71,85,105,1)";
   ctx.textAlign = "left";
-  ctx.fillText("ÁNGULO DE DISPERSIÓN", ax, 14);
-  ctx.font = "10px monospace";
+  ctx.fillText("ÁNGULO DE DESVIACIÓN", ax, 16);
+  ctx.font = "12px monospace";
   ctx.textAlign = "right";
-  ctx.fillStyle = dark ? "rgba(100,120,160,1)" : "rgba(100,116,139,1)";
-  ctx.fillText("n=" + statTotal, W - padR, 14);
+  ctx.fillStyle = dark ? "rgba(120,140,185,1)" : "rgba(100,116,139,1)";
+  ctx.fillText("n=" + statTotal, W - padR, 16);
 
   // Eje base
   ctx.strokeStyle = dark ? "rgba(80,88,110,1)" : "rgba(148,163,184,1)";
@@ -555,14 +554,14 @@ function updateSidebarHistogram() {
   }
 
   // Etiquetas eje X
-  ctx.font = "9px sans-serif";
-  ctx.fillStyle = dark ? "rgba(120,130,155,1)" : "rgba(100,116,139,1)";
+  ctx.font = "11px sans-serif";
+  ctx.fillStyle = dark ? "rgba(140,150,175,1)" : "rgba(100,116,139,1)";
   ctx.textAlign = "left";
-  ctx.fillText("0°", ax, ay + ah + 13);
+  ctx.fillText("0°", ax, ay + ah + 16);
   ctx.textAlign = "center";
-  ctx.fillText("90°", ax + aw / 2, ay + ah + 13);
+  ctx.fillText("90°", ax + aw / 2, ay + ah + 16);
   ctx.textAlign = "right";
-  ctx.fillText("180°", ax + aw, ay + ah + 13);
+  ctx.fillText("180°", ax + aw, ay + ah + 16);
 }
 
 function mousePressed() {
@@ -591,11 +590,8 @@ function buildEnvironment() {
   
   let atomRadius = 14;
   const FOIL_VISUAL_SCALE = 0.6;
-  // El paso de la rejilla usa el diámetro visual para que los átomos se toquen,
-  // mientras que el radio de física (atomRadius) se mantiene para el potencial.
   let step = Math.round(atomRadius * 2 * FOIL_VISUAL_SCALE); // 16 px
-  let lSlider = document.getElementById("ui-layers-slider");
-  let numColumnas = lSlider ? parseInt(lSlider.value) : 3;
+  let numColumnas = 3;
   let totalFoilWidth = (numColumnas - 1) * step;
   let startX = (width / 2) - (totalFoilWidth / 2);
 
@@ -629,40 +625,36 @@ function setupUIEventListeners() {
   });
   document.getElementById("ui-mode-select").addEventListener("change", (e) => {
     currentMode = e.target.value;
-    let groupLayers = document.getElementById("group-layers");
-    if (groupLayers) groupLayers.style.display = currentMode === "foil" ? "block" : "none";
     alphas = []; deadImpacts = []; resetTelemetry(); buildEnvironment();
   });
   document.getElementById("ui-trigger-select").addEventListener("change", (e) => {
     currentTrigger = e.target.value;
     let groupRate = document.getElementById("group-rate");
     let groupEnergy = document.getElementById("group-energy");
+    let groupPlaypause = document.getElementById("group-playpause");
     let playPauseBtn = document.getElementById("ui-btn-playpause");
     if (currentTrigger === "click") {
       hasClickedInManualMode = false;
+      isContinuousPlaying = false;
       if (groupRate) groupRate.style.display = "none";
       if (groupEnergy) groupEnergy.style.gridColumn = "span 2";
-      if (playPauseBtn) { playPauseBtn.disabled = true; isContinuousPlaying = false; }
+      if (groupPlaypause) groupPlaypause.style.display = "none";
     } else {
       if (groupRate) groupRate.style.display = "block";
       if (groupEnergy) groupEnergy.style.gridColumn = "span 1";
-      if (playPauseBtn) playPauseBtn.disabled = false;
+      if (groupPlaypause) groupPlaypause.style.display = "block";
     }
-    let playSpan = playPauseBtn.querySelector("span");
-    if(playSpan) playSpan.innerText = "Play";
-    playPauseBtn.className = "is-paused";
+    if (playPauseBtn) {
+      playPauseBtn.classList.remove("is-on");
+      playPauseBtn.classList.add("is-off");
+    }
     alphas = []; deadImpacts = []; resetTelemetry();
   });
   let playPauseBtn = document.getElementById("ui-btn-playpause");
   playPauseBtn.addEventListener("click", () => {
     isContinuousPlaying = !isContinuousPlaying;
-    let btnText = playPauseBtn.querySelector("span");
-    if (btnText) btnText.innerText = isContinuousPlaying ? "Pausa" : "Play";
-    playPauseBtn.className = isContinuousPlaying ? "" : "is-paused";
-  });
-  document.getElementById("ui-layers-slider").addEventListener("input", (e) => {
-    document.getElementById("layers-val").innerText = e.target.value;
-    resetTelemetry(); buildEnvironment();
+    playPauseBtn.classList.toggle("is-on", isContinuousPlaying);
+    playPauseBtn.classList.toggle("is-off", !isContinuousPlaying);
   });
   document.getElementById("ui-z-slider").addEventListener("input", (e) => {
     let z = parseInt(e.target.value);
@@ -741,15 +733,35 @@ function setupAppearanceEventListeners() {
     if (card) card.addEventListener("click", (e) => { e.stopPropagation(); });
     document.addEventListener("click", () => { container.classList.remove("is-active"); });
   }
-  // Inicializa data-theme desde el valor actual del selector (evita desfase al cargar)
+  // El tema y el tamaño de interfaz ya fueron aplicados a <html> por el script
+  // inline (antes de crear el lienzo). Aquí solo sincronizamos los selectores,
+  // persistimos los cambios y reaccionamos a ellos.
+  let root = document.documentElement;
+
   let themeSelect = document.getElementById("ui-theme-select");
-  uiCache.theme = themeSelect ? themeSelect.value : "dark";
-  document.documentElement.setAttribute("data-theme", uiCache.theme);
-  themeSelect.addEventListener("change", (e) => {
+  let curTheme = root.getAttribute("data-theme") || "dark";
+  if (themeSelect) themeSelect.value = curTheme;
+  uiCache.theme = curTheme;
+  if (themeSelect) themeSelect.addEventListener("change", (e) => {
     uiCache.theme = e.target.value;
-    document.documentElement.setAttribute("data-theme", e.target.value);
+    root.setAttribute("data-theme", e.target.value);
+    try { localStorage.setItem("sim-ui-theme", e.target.value); } catch (err) {}
     updateSidebarHistogram();
   });
+
+  // Tamaño de interfaz: "compact" (ordenador) o "touch" (tablet/pizarra).
+  // Al cambiar varía el ancho del panel, así que reajustamos el lienzo p5.
+  let densitySelect = document.getElementById("ui-density-select");
+  let curDensity = root.getAttribute("data-ui") || "compact";
+  if (densitySelect) {
+    densitySelect.value = curDensity;
+    densitySelect.addEventListener("change", (e) => {
+      root.setAttribute("data-ui", e.target.value);
+      try { localStorage.setItem("sim-ui-density", e.target.value); } catch (err) {}
+      windowResized();
+      updateSidebarHistogram();
+    });
+  }
   document.getElementById("ui-radius-electron").addEventListener("input", (e) => {
     document.getElementById("electron-radius-val").innerText = e.target.value + " px";
     refreshColorCache();
