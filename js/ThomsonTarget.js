@@ -87,31 +87,20 @@ class ThomsonTarget {
         }
       }
 
-      let remainingElectrons = n;
-      let layerCapacities = [2, 8, 18, 32, 32, 8]; 
-      let layerIndex = 0;
-      
-      while (remainingElectrons > 0) {
-        if (layerIndex >= layerCapacities.length) {
-          layerCapacities.push(32);
-        }
-        let eInLayer = Math.min(remainingElectrons, layerCapacities[layerIndex]);
-        let layerRadius = this.R * (0.25 + 0.70 * (layerIndex / 4.0));
-        
-        for (let i = 0; i < eInLayer; i++) {
-          let initialAngle = (TWO_PI / eInLayer) * i;
-          this.electrons.push({
-            pos: { x: this.pos.x + layerRadius * Math.cos(initialAngle), y: this.pos.y + layerRadius * Math.sin(initialAngle) },
-            vel: { x: 0, y: 0 },
-            mass: 1,
-            physicsRadius: 0.005,
-            rLayer: layerRadius,
-            angle: initialAngle,
-            isEjected: false
-          });
-        }
-        remainingElectrons -= eInLayer;
-        layerIndex++;
+      // Rutherford no repartió los electrones en capas (eso llegó con Bohr en
+      // 1913): giran alrededor del núcleo a distancias variadas, sin órbitas fijas.
+      for (let i = 0; i < n; i++) {
+        let rE = this.R * Math.sqrt(random(0.09, 0.9));
+        let initialAngle = random(TWO_PI);
+        this.electrons.push({
+          pos: { x: this.pos.x + rE * Math.cos(initialAngle), y: this.pos.y + rE * Math.sin(initialAngle) },
+          vel: { x: 0, y: 0 },
+          mass: 1,
+          physicsRadius: 0.005,
+          rLayer: rE,
+          angle: initialAngle,
+          isEjected: false
+        });
       }
     }
   }
@@ -326,15 +315,6 @@ class ThomsonTarget {
       }
     } else {
       if (!this.isSimplified) {
-        // Órbitas de capas electrónicas (Bohr)
-        drawingContext.save();
-        drawingContext.setLineDash([5, 7]);
-        stroke(theme === "light" ? color(60, 100, 200, 70) : color(100, 160, 255, 55));
-        strokeWeight(0.7);
-        noFill();
-        for (let r of this.getOrbitRadii()) ellipse(this.pos.x, this.pos.y, r * 2, r * 2);
-        drawingContext.restore();
-
         noStroke();
         for (let nuc of this.nucleons) {
           fill(nuc.type === "proton" ? protonColor : neutronColor);
