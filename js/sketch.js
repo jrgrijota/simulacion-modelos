@@ -675,7 +675,7 @@ function setupUIEventListeners() {
     document.getElementById("rate-val").innerText = e.target.value;
   });
   document.getElementById("ui-speed-slider").addEventListener("input", (e) => {
-    document.getElementById("speed-val").innerText = parseFloat(e.target.value).toFixed(1);
+    document.getElementById("speed-val").innerText = parseFloat(e.target.value).toFixed(1).replace('.', ',');
   });
   document.getElementById("ui-btn-reset").addEventListener("click", () => {
     alphas = []; deadImpacts = []; resetTelemetry();
@@ -712,7 +712,7 @@ function setupUIEventListeners() {
         let pct = statTotal > 0 ? (count / statTotal * 100) : 0;
         tooltip.innerHTML = "<strong>" + lo + "°–" + hi + "°</strong>" +
           "<br>" + count + " / " + statTotal +
-          "<br><span class='tt-pct'>" + pct.toFixed(1) + "%</span>";
+          "<br><span class='tt-pct'>" + pct.toFixed(1).replace('.', ',') + " %</span>";
         tooltip.style.display = "block";
         let tw = tooltip.offsetWidth;
         let left = e.clientX + 14;
