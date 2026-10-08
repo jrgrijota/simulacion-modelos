@@ -34,6 +34,7 @@ const uiCache = {
   protonColor: null, neutronColor: null, electronColor: null,
   electronRadius: 2.0,
   protonR: 255, protonG: 60, protonB: 60,
+  alphaR: 255, alphaG: 0, alphaB: 0,       // trayectoria e impactos de las α
 };
 
 function refreshColorCache() {
@@ -44,6 +45,11 @@ function refreshColorCache() {
     uiCache.protonR = red(uiCache.protonColor);
     uiCache.protonG = green(uiCache.protonColor);
     uiCache.protonB = blue(uiCache.protonColor);
+  }
+  el = document.getElementById("ui-color-alpha");
+  if (el) {
+    let c = color(el.value);
+    uiCache.alphaR = red(c); uiCache.alphaG = green(c); uiCache.alphaB = blue(c);
   }
   el = document.getElementById("ui-color-neutron");   if (el) uiCache.neutronColor  = color(el.value);
   el = document.getElementById("ui-color-electron");  if (el) uiCache.electronColor = color(el.value);
@@ -212,8 +218,8 @@ function draw() {
       let inAperture = Math.abs(exitAngle) > (Math.PI - openAngleRad);
 
       if (!inAperture) {
-        // Partícula detectada: impacto en color de los protones
-        deadImpacts.push({ x: width / 2 + ux * detectorRadius, y: height / 2 + uy * detectorRadius, r: uiCache.protonR, g: uiCache.protonG, b: uiCache.protonB });
+        // Partícula detectada: impacto en el color de la partícula α
+        deadImpacts.push({ x: width / 2 + ux * detectorRadius, y: height / 2 + uy * detectorRadius, r: uiCache.alphaR, g: uiCache.alphaG, b: uiCache.alphaB });
         if (deadImpacts.length > 40) deadImpacts.shift();
       }
       // Se cuentan todas, también las que vuelven hacia la fuente y salen por la
@@ -224,7 +230,7 @@ function draw() {
       }
       // El trail se guarda siempre en modo átomo, tanto si fue detectada como si salió por la apertura
       if (currentMode === "atom" && a.history.length > 1) {
-        savedTrails.push({ points: [...a.history, { x: a.pos.x, y: a.pos.y }], framesLeft: 300, r: uiCache.protonR, g: uiCache.protonG, b: uiCache.protonB });
+        savedTrails.push({ points: [...a.history, { x: a.pos.x, y: a.pos.y }], framesLeft: 300, r: uiCache.alphaR, g: uiCache.alphaG, b: uiCache.alphaB });
         if (savedTrails.length > 6) savedTrails.shift();
       }
       alphas.splice(i, 1);

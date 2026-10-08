@@ -75,10 +75,10 @@ class AlphaParticle {
     ellipse(px + d, py - d, nr * 2, nr * 2);
     ellipse(px - d, py + d, nr * 2, nr * 2);
 
-    // Trail en color de los protones
+    // Trayectoria en el color elegido para la partícula α (engranaje)
     for (let i = 0; i < this.history.length; i++) {
       let p = this.history[i];
-      fill(uiCache.protonR, uiCache.protonG, uiCache.protonB, map(i, 0, this.history.length, 4, 70));
+      fill(uiCache.alphaR, uiCache.alphaG, uiCache.alphaB, map(i, 0, this.history.length, 4, 70));
       ellipse(p.x, p.y, 2, 2);
     }
   }
