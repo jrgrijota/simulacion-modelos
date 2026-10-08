@@ -1,3 +1,7 @@
+// Límite de desviación del modelo de Thomson (rad). Medido en todo el rango de Z y
+// velocidad: como mucho 4,3° (Z=118, v=4), así que «siempre < 5°» es cierto.
+const THOMSON_MAX_RAD = 0.16;
+
 class ThomsonTarget {
   constructor(x, y, radius, numElectrons, isSimplified = false, currentModel = "thomson", visualScale = 1.0) {
     this.pos = { x: x, y: y }; // Objeto literal de bajo coste computacional
@@ -220,9 +224,12 @@ class ThomsonTarget {
       // Cap de la fuerza total resultante para Thomson.
       // Escala con R²: no afecta al átomo grande de display (R=190, fCap≈ke=8000)
       // pero limita con fuerza los átomos pequeños de lámina (R=14, fCap≈43).
-      // Garantiza deflexiones ≤5° en cualquier Z (1-100) y cualquier modo.
-      // Verificado numéricamente para todos los valores del slider.
       let fCap = this.ke * (this.R * this.R) / (190.0 * 190.0);
+      // Segundo límite, según la velocidad: la desviación es θ ≈ F·t/(m·v), con un
+      // tiempo de paso t ≈ 2,4R/v, así que F ≤ θmáx·m·v²/(2,4R) asegura θ < 5°
+      // también con α lentas y Z alto (sin él, vista Átomo con v=4 y Z=118: 45°).
+      let v2 = alpha.vel.x * alpha.vel.x + alpha.vel.y * alpha.vel.y;
+      fCap = Math.min(fCap, THOMSON_MAX_RAD * alpha.mass * v2 / (2.4 * this.R));
       let totalF = Math.sqrt(fx * fx + fy * fy);
       if (totalF > fCap) {
         let scale = fCap / totalF;
