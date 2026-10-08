@@ -267,6 +267,20 @@ class ThomsonTarget {
     return this._force;
   }
 
+  // Signos «+» repartidos de forma uniforme (patrón de girasol) por la esfera.
+  drawPlusSigns(theme) {
+    const n = 34, golden = Math.PI * (3 - Math.sqrt(5)), arm = Math.max(3, this.R * 0.035);
+    stroke(theme === "light" ? color(170, 95, 0, 200) : color(255, 205, 90, 150));
+    strokeWeight(1.4);
+    for (let i = 0; i < n; i++) {
+      let r = this.R * 0.9 * Math.sqrt((i + 0.5) / n);
+      let a = i * golden;
+      let x = this.pos.x + r * Math.cos(a), y = this.pos.y + r * Math.sin(a);
+      line(x - arm, y, x + arm, y);
+      line(x, y - arm, x, y + arm);
+    }
+  }
+
   display() {
     push();
     translate(this.pos.x, this.pos.y);
@@ -284,10 +298,13 @@ class ThomsonTarget {
 
     if (this.model === "thomson") {
       if (!this.isSimplified) {
-        fill(255, 190, 0, theme === "light" ? 55 : 12);
-        stroke(255, 190, 0, theme === "light" ? 130 : 40);
-        strokeWeight(1);
+        // La carga positiva repartida por toda la esfera es la idea central del
+        // modelo: se pinta bien visible y sembrada de signos «+».
+        fill(255, 190, 0, theme === "light" ? 70 : 42);
+        stroke(255, 190, 0, theme === "light" ? 170 : 120);
+        strokeWeight(1.5);
         ellipse(this.pos.x, this.pos.y, this.R * 2, this.R * 2);
+        this.drawPlusSigns(theme);
         // Órbitas de los anillos de electrones
         drawingContext.save();
         drawingContext.setLineDash([5, 7]);
