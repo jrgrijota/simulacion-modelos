@@ -212,13 +212,15 @@ function draw() {
       let inAperture = Math.abs(exitAngle) > (Math.PI - openAngleRad);
 
       if (!inAperture) {
-        // Partícula detectada: impacto en color de los protones + recuento
+        // Partícula detectada: impacto en color de los protones
         deadImpacts.push({ x: width / 2 + ux * detectorRadius, y: height / 2 + uy * detectorRadius, r: uiCache.protonR, g: uiCache.protonG, b: uiCache.protonB });
         if (deadImpacts.length > 40) deadImpacts.shift();
-        if (!a.hasBeenCounted) {
-          a.hasBeenCounted = true;
-          recordScattering(a.deviationAngle);
-        }
+      }
+      // Se cuentan todas, también las que vuelven hacia la fuente y salen por la
+      // apertura (desviaciones de más de ~125°): son justo los rebotes que importan.
+      if (!a.hasBeenCounted) {
+        a.hasBeenCounted = true;
+        recordScattering(a.deviationAngle);
       }
       // El trail se guarda siempre en modo átomo, tanto si fue detectada como si salió por la apertura
       if (currentMode === "atom" && a.history.length > 1) {
