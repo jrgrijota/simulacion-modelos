@@ -634,6 +634,11 @@ function setupUIEventListeners() {
   document.getElementById("ui-mode-select").addEventListener("change", (e) => {
     currentMode = e.target.value;
     alphas = []; deadImpacts = []; resetTelemetry(); buildEnvironment();
+    // En la lámina, el gráfico de ángulos es la prueba del experimento: se abre solo
+    if (currentMode === "foil") {
+      document.getElementById("ui-panel-histogram").classList.add("is-expanded");
+      updateSidebarHistogram();
+    }
   });
   document.getElementById("ui-trigger-select").addEventListener("change", (e) => {
     currentTrigger = e.target.value;
