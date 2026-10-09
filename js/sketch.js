@@ -369,8 +369,8 @@ function drawAtomLabel(themeMode, atom) {
 // del arco del detector, apuntando hacia la apertura del emisor.
 function drawClickHint(themeMode, openX, openHH) {
   let notch = 12;    // profundidad de la flecha izquierda
-  let boxW = 132;
-  let boxH = 88;
+  let boxW = 172;
+  let boxH = 112;
   let boxX = openX + 10;
   let boxY = height / 2 - boxH / 2;
   let cx   = boxX + notch + (boxW - notch) / 2;
@@ -394,21 +394,21 @@ function drawClickHint(themeMode, openX, openHH) {
   noStroke();
   textAlign(CENTER, TOP);
   textStyle(BOLD);
-  textSize(9);
-  text("MODO INDIVIDUAL", cx, boxY + 8);
+  textSize(12);
+  text("MODO INDIVIDUAL", cx, boxY + 9);
 
   stroke(255, 255, 255, 55);
   strokeWeight(0.5);
-  line(boxX + notch + 4, boxY + 22, boxX + boxW - 6, boxY + 22);
+  line(boxX + notch + 4, boxY + 27, boxX + boxW - 6, boxY + 27);
 
   noStroke();
   fill(215, 228, 255);
   textStyle(NORMAL);
-  textSize(9);
-  text("Haz clic en cualquier", cx, boxY + 28);
-  text("altura de esta zona.", cx, boxY + 41);
-  text("Cada clic = 1 partícula α.", cx, boxY + 55);
-  text("Observa su trayectoria.", cx, boxY + 69);
+  textSize(12);
+  text("Haz clic en cualquier", cx, boxY + 34);
+  text("altura de esta zona.", cx, boxY + 51);
+  text("Cada clic = 1 partícula α.", cx, boxY + 68);
+  text("Observa su trayectoria.", cx, boxY + 85);
 
   pop();
 }
@@ -455,7 +455,7 @@ function drawEmitter(themeMode, openX, openHH) {
 
   // Etiqueta bajo el cuerpo
   fill(themeMode === "light" ? color(100, 116, 139) : color(130, 140, 165));
-  textSize(9);
+  textSize(12);
   textAlign(CENTER, TOP);
   text("Fuente α", bodyX + bodyW / 2, cy + bodyH / 2 + 5);
 
