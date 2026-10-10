@@ -272,7 +272,7 @@ const ELEMENT_NAMES = {
 // Una línea punteada diagonal señala desde la caja hasta el borde del átomo.
 // Etiqueta "Detector" en la esquina inferior derecha, con línea punteada al arco.
 function drawDetectorLabel(themeMode) {
-  let labelText = "Detector";
+  let labelText = i18n.t("Detector");
   push();
   textSize(11.5);
   textStyle(NORMAL);
