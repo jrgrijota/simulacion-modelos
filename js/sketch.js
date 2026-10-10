@@ -313,7 +313,7 @@ function drawDetectorLabel(themeMode) {
 
 function drawAtomLabel(themeMode, atom) {
   let nombre = ELEMENT_NAMES[atom.Z] ? ELEMENT_NAMES[atom.Z] : "Z=" + atom.Z;
-  let labelText = "Átomo de " + nombre;
+  let labelText = i18n.t("Átomo de {nombre}", { nombre: i18n.t(nombre) });
 
   push();
   textSize(11.5);
@@ -395,7 +395,7 @@ function drawClickHint(themeMode, openX, openHH) {
   textAlign(CENTER, TOP);
   textStyle(BOLD);
   textSize(12);
-  text("MODO INDIVIDUAL", cx, boxY + 9);
+  text(i18n.t("MODO INDIVIDUAL"), cx, boxY + 9);
 
   stroke(255, 255, 255, 55);
   strokeWeight(0.5);
@@ -405,10 +405,10 @@ function drawClickHint(themeMode, openX, openHH) {
   fill(215, 228, 255);
   textStyle(NORMAL);
   textSize(12);
-  text("Haz clic en cualquier", cx, boxY + 34);
-  text("altura de esta zona.", cx, boxY + 51);
-  text("Cada clic = 1 partícula α.", cx, boxY + 68);
-  text("Observa su trayectoria.", cx, boxY + 85);
+  text(i18n.t("Haz clic en cualquier"), cx, boxY + 34);
+  text(i18n.t("altura de esta zona."), cx, boxY + 51);
+  text(i18n.t("Cada clic = 1 partícula α."), cx, boxY + 68);
+  text(i18n.t("Observa su trayectoria."), cx, boxY + 85);
 
   pop();
 }
@@ -457,7 +457,7 @@ function drawEmitter(themeMode, openX, openHH) {
   fill(themeMode === "light" ? color(100, 116, 139) : color(130, 140, 165));
   textSize(12);
   textAlign(CENTER, TOP);
-  text("Fuente α", bodyX + bodyW / 2, cy + bodyH / 2 + 5);
+  text(i18n.t("Fuente α"), bodyX + bodyW / 2, cy + bodyH / 2 + 5);
 
   pop();
 }
@@ -522,7 +522,7 @@ function updateSidebarHistogram() {
   ctx.font = "bold 12px sans-serif";
   ctx.fillStyle = dark ? "rgba(148,163,184,1)" : "rgba(71,85,105,1)";
   ctx.textAlign = "left";
-  ctx.fillText("ÁNGULO DE DESVIACIÓN", ax, 16);
+  ctx.fillText(i18n.t("ÁNGULO DE DESVIACIÓN"), ax, 16);
   ctx.font = "12px monospace";
   ctx.textAlign = "right";
   ctx.fillStyle = dark ? "rgba(120,140,185,1)" : "rgba(100,116,139,1)";
@@ -672,16 +672,17 @@ function setupUIEventListeners() {
   document.getElementById("ui-z-slider").addEventListener("input", (e) => {
     let z = parseInt(e.target.value);
     let nombre = ELEMENT_NAMES[z] ? ELEMENT_NAMES[z] : "Z=" + z;
-    document.getElementById("z-val").innerText = z + " – " + nombre;
+    document.getElementById("z-val").innerText = z + " – " + i18n.t(nombre);
     resetTelemetry(); buildEnvironment();
   });
-  { let z = parseInt(document.getElementById("ui-z-slider").value); document.getElementById("z-val").innerText = z + " – " + (ELEMENT_NAMES[z] || "Z=" + z); }
+  { let z = parseInt(document.getElementById("ui-z-slider").value); document.getElementById("z-val").innerText = z + " – " + i18n.t(ELEMENT_NAMES[z] || "Z=" + z); }
   document.getElementById("ui-rate-slider").addEventListener("input", (e) => {
     document.getElementById("rate-val").innerText = e.target.value;
   });
   document.getElementById("ui-speed-slider").addEventListener("input", (e) => {
-    document.getElementById("speed-val").innerText = parseFloat(e.target.value).toFixed(1).replace('.', ',');
+    document.getElementById("speed-val").innerText = i18n.num(parseFloat(e.target.value), 1);
   });
+  document.getElementById("speed-val").innerText = i18n.num(parseFloat(document.getElementById("ui-speed-slider").value), 1);
   document.getElementById("ui-btn-reset").addEventListener("click", () => {
     alphas = []; deadImpacts = []; resetTelemetry();
   });
@@ -717,7 +718,7 @@ function setupUIEventListeners() {
         let pct = statTotal > 0 ? (count / statTotal * 100) : 0;
         tooltip.innerHTML = "<strong>" + lo + "°–" + hi + "°</strong>" +
           "<br>" + count + " / " + statTotal +
-          "<br><span class='tt-pct'>" + pct.toFixed(1).replace('.', ',') + " %</span>";
+          "<br><span class='tt-pct'>" + i18n.num(pct, 1) + " %</span>";
         tooltip.style.display = "block";
         let tw = tooltip.offsetWidth;
         let left = e.clientX + 14;
