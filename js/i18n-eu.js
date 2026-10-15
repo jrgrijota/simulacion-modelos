@@ -102,5 +102,7 @@ window.I18N_EU = {
   'Hasio': 'Hassioa', 'Meitnerio': 'Meitnerioa', 'Darmstadtio': 'Darmstadtioa',
   'Roentgenio': 'Roentgenioa', 'Copernicio': 'Kopernizioa', 'Nihonio': 'Nihonioa',
   'Flerovio': 'Flerovioa', 'Moscovio': 'Moskovioa', 'Livermorio': 'Livermorioa',
-  'Teneso': 'Tenesoa', 'Oganesón': 'Oganesona'
+  'Teneso': 'Tenesoa', 'Oganesón': 'Oganesona',
+  // Sello de la zona de simulación (js/sello.js)
+  'Más simulaciones en simulaciencia.es': 'Simulazio gehiago simulaciencia.es webgunean'
 };
