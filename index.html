@@ -37,7 +37,7 @@
       --text-main: #eef2f8;
       --text-muted: #9aa6bd;
       --text-label: #cdd6e6;
-      --accent: #3b82f6;
+      --accent: #629bf8;
       --accent-strong: #2563eb;
       --accent-soft: rgba(59, 130, 246, 0.14);
       --success: #10b981;
@@ -110,7 +110,7 @@
       --text-main: #0c1a28;
       --text-muted: #2c4258;
       --text-label: #152437;
-      --accent: #1a52be;
+      --accent: #1645a1;
       --accent-strong: #123f9a;
       --accent-soft: rgba(26, 82, 190, 0.16);
       --success: #0a7a50;
@@ -492,7 +492,7 @@
         <h2>El átomo</h2>
         <div class="grid-2col control-group">
           <div>
-            <label>Modelo</label>
+            <label for="ui-atom-model">Modelo</label>
             <div class="select-wrapper">
               <select id="ui-atom-model" title="Cómo se reparte la carga dentro del átomo">
                 <option value="thomson">Thomson</option>
@@ -501,7 +501,7 @@
             </div>
           </div>
           <div>
-            <label>Vista</label>
+            <label for="ui-mode-select">Vista</label>
             <div class="select-wrapper">
               <select id="ui-mode-select" title="Un átomo aislado o una lámina completa">
                 <option value="atom">Átomo</option>
@@ -512,7 +512,7 @@
         </div>
 
         <div class="control-group">
-          <label>Número atómico (Z) <span class="data-readout" id="z-val">14</span></label>
+          <label for="ui-z-slider">Número atómico (Z) <span class="data-readout" id="z-val">14</span></label>
           <input type="range" id="ui-z-slider" min="1" max="118" value="14">
         </div>
       </div>
@@ -520,7 +520,7 @@
       <div class="control-card">
         <h2>Lanzamiento</h2>
         <div class="control-group">
-          <label>Modo de emisión</label>
+          <label for="ui-trigger-select">Modo de emisión</label>
           <div class="select-wrapper">
             <select id="ui-trigger-select" title="Lanzar de una en una o en lluvia continua">
               <option value="click">Una a una (clic)</option>
@@ -531,11 +531,11 @@
 
         <div class="grid-asymmetric control-group">
           <div id="group-rate" style="display: none;">
-            <label>Ritmo <span class="data-readout" id="rate-val">20</span></label>
+            <label for="ui-rate-slider">Ritmo <span class="data-readout" id="rate-val">20</span></label>
             <input type="range" id="ui-rate-slider" min="1" max="60" value="20">
           </div>
           <div id="group-energy" style="grid-column: span 2;">
-            <label>Energía (velocidad α) <span class="data-readout" id="speed-val">10,0</span></label>
+            <label for="ui-speed-slider">Energía (velocidad α) <span class="data-readout" id="speed-val">10,0</span></label>
             <input type="range" id="ui-speed-slider" min="4" max="16" step="0.5" value="10">
           </div>
         </div>
@@ -574,7 +574,7 @@
         <div class="dropdown-card">
           <h3>Apariencia</h3>
           <div class="control-group">
-            <label>Tema</label>
+            <label for="ui-theme-select">Tema</label>
             <div class="select-wrapper">
               <select id="ui-theme-select">
                 <option value="dark">Modo Oscuro</option>
@@ -584,7 +584,7 @@
             </div>
           </div>
           <div class="control-group">
-            <label>Tamaño de interfaz</label>
+            <label for="ui-density-select">Tamaño de interfaz</label>
             <div class="select-wrapper">
               <select id="ui-density-select" title="Controles compactos para ratón o grandes para pantalla táctil">
                 <option value="compact">Ordenador</option>
@@ -594,15 +594,15 @@
           </div>
           <h3>Tamaño del dibujo</h3>
           <div class="control-group">
-            <label>Radio de los electrones <span class="data-readout" id="electron-radius-val">2 px</span></label>
+            <label for="ui-radius-electron">Radio de los electrones <span class="data-readout" id="electron-radius-val">2 px</span></label>
             <input type="range" id="ui-radius-electron" min="1" max="10" value="2">
           </div>
           <h3>Colores</h3>
           <div class="color-grid">
-            <div class="color-row"><label>Trayectoria α</label><input type="color" id="ui-color-alpha" class="color-picker-input" value="#ff0000"></div>
-            <div class="color-row"><label>Protones</label><input type="color" id="ui-color-proton" class="color-picker-input" value="#ff0000"></div>
-            <div class="color-row"><label>Neutrones</label><input type="color" id="ui-color-neutron" class="color-picker-input" value="#aaaaaa"></div>
-            <div class="color-row"><label>Electrones</label><input type="color" id="ui-color-electron" class="color-picker-input" value="#00a0ff"></div>
+            <div class="color-row"><label for="ui-color-alpha">Trayectoria α</label><input type="color" id="ui-color-alpha" class="color-picker-input" value="#ff0000"></div>
+            <div class="color-row"><label for="ui-color-proton">Protones</label><input type="color" id="ui-color-proton" class="color-picker-input" value="#ff0000"></div>
+            <div class="color-row"><label for="ui-color-neutron">Neutrones</label><input type="color" id="ui-color-neutron" class="color-picker-input" value="#aaaaaa"></div>
+            <div class="color-row"><label for="ui-color-electron">Electrones</label><input type="color" id="ui-color-electron" class="color-picker-input" value="#00a0ff"></div>
           </div>
         </div>
       </div>
