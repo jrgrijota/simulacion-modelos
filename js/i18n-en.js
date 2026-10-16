@@ -101,5 +101,7 @@ window.I18N_EN = {
   'Hasio': 'Hassium', 'Meitnerio': 'Meitnerium', 'Darmstadtio': 'Darmstadtium',
   'Roentgenio': 'Roentgenium', 'Copernicio': 'Copernicium', 'Nihonio': 'Nihonium',
   'Flerovio': 'Flerovium', 'Moscovio': 'Moscovium', 'Livermorio': 'Livermorium',
-  'Teneso': 'Tennessine', 'Oganesón': 'Oganesson'
+  'Teneso': 'Tennessine', 'Oganesón': 'Oganesson',
+  // Sello de la zona de simulación (js/sello.js)
+  'Más simulaciones en simulaciencia.es': 'More simulations at simulaciencia.es'
 };
