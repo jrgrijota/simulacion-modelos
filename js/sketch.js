@@ -84,6 +84,18 @@ function setup() {
   setupUIEventListeners();
   refreshColorCache();
   buildEnvironment();
+  // Ajustes de la dirección (fichas del alumnado): ver js/parametros.js.
+  const alias = (map, f) => (v) => f(map[v] || v);
+  aplicarParametrosUrl({
+    modelo:      urlParam.select("ui-atom-model"),
+    vista:       alias({ atomo: "atom", "átomo": "atom", lamina: "foil", "lámina": "foil" }, urlParam.select("ui-mode-select")),
+    z:           urlParam.range("ui-z-slider"),
+    lanzamiento: alias({ clic: "click", lluvia: "continuous" }, urlParam.select("ui-trigger-select")),
+    ritmo:       urlParam.range("ui-rate-slider"),
+    velocidad:   urlParam.range("ui-speed-slider"),
+    emision:     urlParam.toggle("ui-btn-playpause", (b) => b.classList.contains("is-on")),
+    grafico:     urlParam.toggle("ui-histogram-trigger", () => document.getElementById("ui-panel-histogram").classList.contains("is-expanded")),
+  });
 }
 
 // Reajusta el canvas y reconstruye el escenario cuando cambia el tamaño de la ventana.
