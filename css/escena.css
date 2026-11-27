@@ -1,0 +1,64 @@
+/* ════════════════════════════════════════════════════
+   ESCENA PROPIA DE «MODELOS ATÓMICOS»
+   Lo común (cabecera, carriles, botones, paneles, retos, mandos sobre el
+   lienzo, móvil) está en css/escena-comun.css, que se carga antes.
+   Mandos sobre el lienzo: medidas con calc(var(--u) * N).
+════════════════════════════════════════════════════ */
+[hidden] { display: none !important; }
+
+/* ── Fila de contexto: metal · otro elemento · frase · reiniciar ── */
+.barra-sus .metales .carril-btn { padding: 0 18px; }
+.barra-sus .sus-info { line-height: 1.35; }
+.barra-sus .sus-info strong { font-weight: 600; }
+#btn-otro.active { border-color: var(--accent); color: var(--accent); }
+#btn-reiniciar { margin-left: auto; }
+
+/* Otro elemento: deslizador de Z en un panel flotante */
+.panel-z {
+    position: fixed; z-index: 60; top: 112px; left: 50%; transform: translateX(-50%);
+    width: min(420px, calc(100vw - 24px)); border-radius: 20px; padding: 16px 20px 18px;
+    display: flex; flex-direction: column; gap: 10px;
+}
+.panel-z .panel-cab h2 { font-size: 1.25rem; margin: 0; padding: 0; }
+.panel-z .fila-z { display: flex; justify-content: space-between; align-items: baseline; color: var(--muted); }
+.panel-z .fila-z b { font: 700 1.15rem var(--font-fun); color: var(--title); }
+.panel-z input[type="range"] { width: 100%; }
+.panel-z .nota { margin: 0; color: var(--muted); font-size: .86rem; }
+
+/* ── Mandos bajo el aparato: carril + botón, y dos deslizadores ── */
+.mandos-modelos { gap: calc(var(--u) * 4); --col-nom: calc(var(--u) * 150); --col-val: calc(var(--u) * 84); }
+.mandos-modelos .fila-botones { display: grid; grid-template-columns: minmax(0, 1fr) calc(var(--u) * 150); gap: calc(var(--u) * 10); margin-bottom: calc(var(--u) * 4); }
+#escena .mandos-lienzo .carril { display: flex; height: calc(var(--u) * 40); padding: calc(var(--u) * 3); }
+#escena .mandos-lienzo .carril .carril-btn { flex: 1; justify-content: center; height: 100%; padding: 0 calc(var(--u) * 8); font-size: calc(var(--u) * 15.5); }
+#escena .mandos-lienzo .boton-suelto { height: calc(var(--u) * 40); padding: 0 calc(var(--u) * 12); font-size: calc(var(--u) * 15.5); white-space: nowrap; }
+#btn-lanzar { color: var(--title); }
+.mandos-modelos .fila-deslizador { display: grid; grid-template-columns: var(--col-nom) minmax(0, 1fr) var(--col-val); align-items: center; column-gap: calc(var(--u) * 10); height: calc(var(--u) * 40); }
+body .mandos-modelos .fila-deslizador label { min-width: 0; color: var(--title); font: 600 calc(var(--u) * 16) var(--font-fun); white-space: nowrap; }
+.mandos-modelos .fila-deslizador input[type="range"] { width: 100%; min-width: 0; }
+.mandos-modelos .fila-deslizador .valor { min-width: 0; text-align: right; font: 700 calc(var(--u) * 16.5) var(--font-fun); white-space: nowrap; }
+#mandos-modelo .carril.grande { height: calc(var(--u) * 40); }
+
+/* El lienzo recibe el foco para apuntar con el teclado */
+#canvas-container canvas:focus-visible { outline: 3px solid var(--accent); outline-offset: 4px; border-radius: 12px; }
+
+/* ── ⚙: colores del modelo y tamaño de los electrones ── */
+.colores-modelo { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px; margin-bottom: 8px; }
+.colores-modelo label { display: flex; align-items: center; gap: 8px; font-size: .86rem; color: var(--text); cursor: pointer; }
+.colores-modelo input[type="color"] { width: 26px; height: 26px; padding: 0; border: none; background: none; cursor: pointer; -webkit-appearance: none; appearance: none; }
+.colores-modelo input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+.colores-modelo input[type="color"]::-webkit-color-swatch { border: 2px solid var(--line); border-radius: 50%; }
+.colores-modelo input[type="color"]::-moz-color-swatch { border: 2px solid var(--line); border-radius: 50%; }
+.theme-panel .tam-e { display: flex; justify-content: space-between; font-size: .86rem; color: var(--text); }
+.theme-panel #sl-tam-e { width: 100%; margin: 4px 0 2px; }
+
+@media (max-width: 760px) {
+    .barra-sus { flex-wrap: wrap; }
+    .barra-sus .metales { flex: 1 1 0; min-width: 0; }
+    .barra-sus .metales .carril-btn { padding: 0 12px; }
+    #btn-otro, #btn-reiniciar { width: 40px; min-width: 40px; padding: 0; margin-left: 0; order: 0; }
+    .barra-sus .sus-info { order: 5; flex-basis: 100%; }
+    .barra-sus .sus-info em, .barra-sus .sus-info br { display: none; }
+    .mandos-modelos { --col-nom: calc(var(--u) * 96); --col-val: calc(var(--u) * 70); }
+    .mandos-modelos .fila-botones { grid-template-columns: minmax(0, 1fr) calc(var(--u) * 126); }
+    .panel-z { top: 150px; }
+}
