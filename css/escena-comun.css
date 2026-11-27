@@ -1,0 +1,387 @@
+/* ════════════════════════════════════════════════════
+   ESCENA COMÚN DE SIMULACIENCIA · v1.0 (20 de noviembre de 2026)
+
+   Piezas de la interfaz que se repiten en todas las simulaciones
+   rediseñadas como escenas (guía de diseño v2). Este archivo es IDÉNTICO
+   en todas las simulaciones: no se edita en una sola; se cambia en el
+   original y se copia a todas. Lo propio de cada simulación va en
+   css/escena.css, que se carga después.
+
+   Orden de carga: style.css → estilo-juego.css (temas Pizarra y Día,
+   Fredoka) → escena-comun.css → escena.css.
+
+   Regla común de los controles: 40 px de alto y bordes redondeados iguales.
+   Las opciones excluyentes van en un carril oscuro con la activa rellena;
+   los botones sueltos (?, Retos, ajustes, Reiniciar) son todos iguales.
+
+   Contenido: temas SimulaCiencia y alto contraste · cabecera · carril ·
+   botón suelto · fila de contexto · escena y --u · mandos sobre el lienzo
+   (deslizadores, carril grande, botones de ejemplo) · paneles flotantes ·
+   retos y álbum · pantallas medianas y móvil.
+════════════════════════════════════════════════════ */
+body.theme-marca {
+    --bg1: #f1f5f9; --bg2: #f8fafc; --panel: #ffffff; --panel-2: #f1f5f9; --hundido: #e2e8f0;
+    --line: #cbd5e1; --text: #1e293b; --muted: #475569; --title: #0f172a;
+    --accent: #0369a1; --accent-ink: #ffffff; --cyan: #0369a1;
+    --solid: #0369a1; --liquid: #0f766e; --gas: #c2410c; --change: #6d28d9;
+    --hot: #c2410c; --cold: #0369a1; --boton-sombra: #cbd5e1;
+    --font-fun: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+body.theme-contrast {
+    --bg1: #000; --bg2: #000; --panel: #000; --panel-2: #000; --hundido: #000;
+    --line: #ffff00; --text: #ffffff; --muted: #dddddd; --title: #ffffff;
+    --accent: #00ffff; --accent-ink: #000000; --cyan: #00ffff;
+    --solid: #88aaff; --liquid: #00ff88; --gas: #ffaa00; --change: #ffff00;
+    --hot: #ff7755; --cold: #66bbff; --boton-sombra: #000;
+    --font-fun: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* ── Cabecera común ─────────────────────────────── */
+.barra-sup {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 12px 18px;
+    padding: 12px 18px 8px;
+    position: relative;
+    z-index: 30;
+}
+.marca-sim { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.marca-sim .header-icon-svg { width: 40px; height: 40px; flex-shrink: 0; }
+.marca-sim h1 {
+    font: 700 1.75rem/1.1 var(--font-fun);
+    color: var(--title);
+    white-space: nowrap;
+}
+.botones-sup { display: flex; justify-content: flex-end; gap: 10px; position: relative; }
+
+/* Carril de opciones excluyentes */
+.carril {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    height: 40px;
+    padding: 3px;
+    border-radius: 999px;
+    background: var(--hundido);
+    border: 1.5px solid var(--line);
+}
+.carril-btn {
+    height: 32px;
+    padding: 0 16px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--muted);
+    font: 600 0.98rem var(--font-fun);
+    white-space: nowrap;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    transition: background .15s, color .15s;
+}
+.carril-btn:hover { color: var(--title); }
+.carril-btn.active,
+.carril-btn[aria-checked="true"],
+.carril-btn[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); }
+.modos .carril-btn { padding: 0 22px; font-size: 1.02rem; }
+
+/* Botones sueltos */
+.boton-suelto, .barra-sup .theme-btn {
+    position: static;
+    height: 40px;
+    min-width: 40px;
+    padding: 0 18px;
+    border-radius: 999px;
+    border: 1.5px solid var(--line);
+    background: var(--panel);
+    color: var(--title);
+    font: 600 0.98rem var(--font-fun);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    cursor: pointer;
+    box-shadow: 0 3px 0 var(--boton-sombra);
+    transform: none;
+    transition: border-color .15s, background .15s;
+}
+.boton-suelto:hover, .barra-sup .theme-btn:hover { border-color: var(--accent); transform: none; }
+.boton-suelto.active { border-color: var(--change); color: var(--change); }
+.boton-redondo, .barra-sup .theme-btn { width: 40px; padding: 0; }
+.barra-sup .theme-btn { color: var(--muted); }
+.barra-sup .theme-btn.active { border-color: var(--accent); color: var(--accent); transform: none; }
+#btn-ayuda { color: var(--accent); font-size: 1.1rem; }
+.boton-retos { color: var(--change); min-width: 120px; }
+.boton-suelto .ico { width: 15px; height: 15px; fill: currentColor; }
+
+.barra-sup .theme-panel { top: 50px; bottom: auto; right: 0; min-width: 260px; }
+.barra-sup .theme-panel .check-row { display: flex; gap: 8px; align-items: flex-start; font-size: .88rem; color: var(--text); cursor: pointer; }
+
+/* ── Fila de contexto (sustancia, situación…) ───── */
+.barra-sus {
+    display: flex;
+    align-items: center;
+    gap: 10px 16px;
+    padding: 2px 18px 12px;
+}
+.barra-sus-label { color: var(--muted); font-size: 1rem; }
+.carril .punto {
+    width: 13px; height: 13px; border-radius: 50%;
+    border: 2px solid var(--boton-sombra);
+    background: var(--solid);
+}
+.sus-info {
+    flex: 1;
+    min-width: 0;
+    color: var(--text);
+    font-size: .95rem;
+    line-height: 1.3;
+}
+.sus-info strong { color: var(--title); }
+.sus-info em { color: var(--muted); font-style: normal; }
+
+/* ── Escena ─────────────────────────────────────── */
+body .app-container { display: block; height: auto; width: auto; }
+body .simulation-panel {
+    height: auto;
+    display: block;
+    padding: 0 18px 38px;
+    background: none;
+    overflow: visible;
+}
+body .simulation-panel::before { display: none; }
+.escena { position: relative; margin: 0 auto; container-type: inline-size; --u: 1px; }
+body #canvas-container { display: block; padding: 0; width: 100%; }
+body #canvas-container canvas { display: block; box-shadow: none !important; border-radius: 0; width: 100%; height: auto; }
+
+/* ── Mandos HTML sobre el lienzo ────────────────────
+   Se colocan con colocarSobreLienzo() (js/escena-comun.js) y se miden en
+   unidades del lienzo con --u, para que crezcan y encojan con la escena. */
+.mandos-lienzo {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--u) * 14);
+    font-size: calc(var(--u) * 16);
+}
+/* Carril grande (p. ej. Enfriar · Apagar · Calentar) */
+.mandos-lienzo .carril.grande {
+    display: flex;
+    width: 100%;
+    height: calc(var(--u) * 46);
+    padding: calc(var(--u) * 4);
+}
+.mandos-lienzo .carril.grande .carril-btn {
+    flex: 1;
+    justify-content: center;
+    height: 100%;
+    font-size: calc(var(--u) * 19);
+    padding: 0 calc(var(--u) * 10);
+}
+/* Deslizador en una fila: nombre · barra · valor */
+.fila-deslizador { display: flex; align-items: center; gap: calc(var(--u) * 12); }
+.fila-deslizador label { color: var(--muted); font-size: calc(var(--u) * 17); min-width: calc(var(--u) * 80); }
+.fila-deslizador input[type="range"] { flex: 1; margin: 0; }
+.fila-deslizador .valor {
+    font: 700 calc(var(--u) * 18) var(--font-fun);
+    color: var(--title);
+    min-width: calc(var(--u) * 64);
+    text-align: right;
+}
+/* Deslizador apilado: nombre y valor arriba, barra, extremos debajo */
+.mandos-lienzo .fila-slider { display: flex; justify-content: space-between; align-items: baseline; }
+.mandos-lienzo .fila-slider label { font: 600 calc(var(--u) * 16) var(--font-fun); color: var(--title); }
+.mandos-lienzo .valor-slider { font: 700 calc(var(--u) * 18) var(--font-fun); color: var(--title); }
+.mandos-lienzo .fila-slider + input[type="range"],
+.mandos-lienzo .pista input[type="range"] { width: 100%; margin: calc(var(--u) * 8) 0 calc(var(--u) * 2); }
+.mandos-lienzo .slider-bounds {
+    display: flex; justify-content: space-between;
+    color: var(--muted); font-size: calc(var(--u) * 12.5);
+    margin-bottom: calc(var(--u) * 10);
+}
+.mandos-lienzo .pista { position: relative; }
+/* Marca de un valor de referencia bajo la barra (p. ej. 1 atm) */
+.marca-ref {
+    position: absolute; top: 100%; transform: translateX(-50%);
+    color: var(--muted); font-size: calc(var(--u) * 12.5); white-space: nowrap; pointer-events: none;
+}
+.marca-ref i {
+    position: absolute; left: 50%; bottom: calc(100% + var(--u) * 2);
+    width: 2px; height: calc(var(--u) * 20); background: var(--muted);
+}
+.nota-mando { margin: 0 0 calc(var(--u) * 8); color: var(--muted); font-size: calc(var(--u) * 13); }
+/* Botones de ejemplo: casos reales en dos columnas (nombre corto + valor) */
+.ejemplos { display: grid; grid-template-columns: 1fr 1fr; gap: calc(var(--u) * 8) calc(var(--u) * 10); }
+.ejemplos .boton-ej {
+    height: calc(var(--u) * 40);
+    border-radius: calc(var(--u) * 20);
+    border: 2px solid var(--line);
+    background: var(--panel);
+    color: var(--title);
+    font: 600 calc(var(--u) * 15.5) var(--font-fun);
+    display: flex; align-items: center; justify-content: center; gap: calc(var(--u) * 7);
+    cursor: pointer; padding: 0 calc(var(--u) * 8); white-space: nowrap;
+}
+.ejemplos .boton-ej small { font: 400 calc(var(--u) * 13) system-ui, sans-serif; color: var(--muted); }
+.ejemplos .boton-ej:hover { border-color: var(--accent); }
+.ejemplos .boton-ej.active { border: 3px solid var(--accent); background: var(--hundido, #0f2c45); }
+.ejemplos .boton-ej:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+/* Textos que cambian entre ancho y móvil */
+.solo-movil { display: none; }
+
+/* ── Paneles flotantes (?, Cómo leer…) ──────────── */
+.panel-flotante, .panel-retos, .album-caja {
+    background: var(--panel);
+    color: var(--text);
+    border: 1.5px solid var(--line);
+    box-shadow: 0 16px 40px rgba(0,0,0,.35);
+}
+.panel-ayuda {
+    position: fixed;
+    z-index: 60;
+    top: 64px;
+    right: 18px;
+    width: min(440px, calc(100vw - 24px));
+    max-height: calc(100vh - 80px);
+    overflow-y: auto;
+    border-radius: 20px;
+    padding: 18px 22px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    font-size: .95rem;
+}
+.panel-ayuda[hidden], .panel-retos[hidden], .album-modal[hidden], .confirmar[hidden] { display: none; }
+.panel-ayuda h3 { font: 700 1.05rem var(--font-fun); color: var(--title); }
+.panel-ayuda .card { background: var(--hundido); border: 0; border-radius: 14px; padding: 10px 14px; }
+.panel-ayuda .formula { display: flex; justify-content: space-between; padding: 3px 0; }
+.panel-ayuda .formula-name { font-weight: 700; color: var(--title); }
+.panel-ayuda .key-ideas { padding-left: 18px; display: flex; flex-direction: column; gap: 6px; }
+.panel-ayuda .nota { color: var(--muted); font-size: .88rem; }
+.panel-ayuda strong { color: var(--title); }
+.panel-cab { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.panel-cab h2 { font: 700 1.4rem var(--font-fun); color: var(--title); text-transform: none; letter-spacing: 0; }
+.panel-cab h2::before { display: none !important; }
+.boton-cerrar {
+    width: 40px; height: 40px; border-radius: 50%;
+    border: 1.5px solid var(--line); background: var(--hundido); color: var(--title);
+    font-size: 1rem; cursor: pointer; flex-shrink: 0;
+}
+.boton-cerrar:hover { border-color: var(--accent); }
+
+/* ── Retos y álbum ──────────────────────────────── */
+.panel-retos {
+    position: fixed;
+    z-index: 50;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(430px, 100vw);
+    overflow-y: auto;
+    border-width: 0 0 0 3px;
+    border-color: var(--accent);
+    padding: 22px 26px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+.lista-retos { list-style: none; display: flex; flex-direction: column; }
+.lista-retos li {
+    --progreso: 0;
+    display: grid;
+    grid-template-columns: 30px 1fr auto;
+    gap: 12px;
+    align-items: center;
+    padding: 14px 0;
+    border-top: 1px solid var(--line);
+    font: 500 1.02rem/1.35 var(--font-fun);
+    color: var(--text);
+}
+.lista-retos li:first-child { border-top: 0; }
+.anillo {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: conic-gradient(var(--liquid) calc(var(--progreso) * 360deg), var(--hundido) 0);
+    -webkit-mask: radial-gradient(circle, transparent 8px, #000 9px);
+            mask: radial-gradient(circle, transparent 8px, #000 9px);
+}
+.lista-retos li.hecho .anillo { background: var(--change); -webkit-mask: none; mask: none; }
+.reto-estrella { color: var(--change); font-size: 1.2rem; }
+.album-cab { display: flex; align-items: baseline; justify-content: space-between; border-top: 1.5px solid var(--line); padding-top: 16px; }
+.album-cab h2 { font: 700 1.2rem var(--font-fun); color: var(--title); text-transform: none; letter-spacing: 0; }
+.album-cab h2::before { display: none !important; }
+.album-cuenta { font: 700 1.05rem var(--font-fun); color: var(--change); }
+.album-mini { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; justify-items: center; }
+.sello {
+    width: 42px; height: 42px; border-radius: 50%;
+    border: 2px dashed var(--muted);
+    opacity: .7;
+    display: inline-flex; align-items: center; justify-content: center;
+    font: 700 .72rem var(--font-fun); color: #061523;
+}
+.sello.ganado { background: var(--col); border: 3px solid #061523; opacity: 1; transform: rotate(-6deg); }
+.sello.grande { width: 58px; height: 58px; font-size: .95rem; color: var(--muted); }
+.sello.grande.ganado { color: #061523; }
+.panel-retos .nota, .album-caja .nota { color: var(--muted); font-size: .92rem; }
+.retos-botones { display: flex; gap: 12px; flex-wrap: wrap; }
+.retos-botones .boton-suelto { flex: 1; }
+.boton-peligro { color: var(--hot); border-color: var(--hot); }
+.confirmar { background: var(--hundido); border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+
+.album-modal {
+    position: fixed; inset: 0; z-index: 70;
+    background: rgba(3, 12, 22, .72);
+    display: flex; align-items: center; justify-content: center;
+    padding: 16px;
+}
+.album-caja { border-radius: 26px; padding: 24px 28px; width: min(860px, 100%); max-height: 100%; overflow: auto; display: flex; flex-direction: column; gap: 12px; }
+.album-tabla table { width: 100%; border-collapse: collapse; }
+.album-tabla th { font: 600 1rem var(--font-fun); color: var(--muted); padding: 8px; text-align: center; }
+.album-tabla th[scope="row"] { text-align: left; color: var(--title); font-size: 1.1rem; }
+.album-tabla td { text-align: center; padding: 8px; }
+.album-tabla small { display: block; color: var(--muted); margin-bottom: 4px; }
+
+.retos-modo { font: 400 .95rem system-ui, sans-serif; color: var(--muted); }
+
+/* ── Pantallas medianas y móvil ─────────────────── */
+@media (max-width: 1180px) {
+    .barra-sus { flex-wrap: wrap; }
+    .sus-info { order: 3; flex-basis: 100%; }
+}
+@media (max-width: 980px) {
+    .barra-sup { grid-template-columns: 1fr auto; }
+    .barra-sup .modos { grid-column: 1 / -1; grid-row: 2; justify-self: stretch; }
+    .barra-sup .modos .carril-btn { flex: 1; justify-content: center; }
+}
+@media (max-width: 760px) {
+    body { overflow-y: auto; }
+    .barra-sup { padding: 10px 10px 6px; gap: 10px; }
+    .marca-sim h1 { font-size: 1.4rem; }
+    .marca-sim .header-icon-svg { display: none; }
+    .botones-sup { gap: 6px; }
+    .boton-retos { min-width: 40px; width: 40px; padding: 0; }
+    .boton-retos .btn-retos-txt { display: none; }
+    .modos .carril-btn { padding: 0 8px; font-size: .9rem; }
+    .barra-sus { padding: 0 10px 10px; gap: 8px 10px; }
+    .barra-sus-label { display: none; }
+    .barra-sus .carril { max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+    .barra-sus .carril .carril-btn { padding: 0 12px; font-size: .92rem; }
+    .carril .punto { display: none; }
+    .sus-info { order: 2; flex-basis: auto; font-size: .85rem; }
+    .sus-info .curiosidad { display: none; }
+    #btn-reiniciar, .barra-sus .boton-suelto { order: 3; }
+    .solo-ancho { display: none; }
+    .solo-movil { display: inline; }
+    .ejemplos .boton-ej { font-size: calc(var(--u) * 14.5); }
+    .ejemplos .boton-ej small { font-size: calc(var(--u) * 12); }
+    body .simulation-panel { padding: 0 10px 46px; }
+    .panel-retos { top: auto; height: 82vh; width: 100vw; border-width: 3px 0 0; border-radius: 22px 22px 0 0; }
+}
+
+/* Títulos de los paneles: por encima del estilo de los h2 de la barra lateral */
+.panel-retos .panel-cab h2, .panel-ayuda .panel-cab h2, .album-caja .panel-cab h2 { font-size: 1.45rem; margin: 0; padding: 0; }
+.panel-retos .album-cab h2 { font-size: 1.2rem; margin: 0; padding: 0; }
+.retos-botones .boton-suelto { font-size: .9rem; padding: 0 12px; white-space: nowrap; }
+

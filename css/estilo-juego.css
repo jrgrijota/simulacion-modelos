@@ -1,0 +1,325 @@
+/* ════════════════════════════════════════════════════
+   PILOTO · ESTILO «CARGA CERO» PARA LAS SIMULACIONES
+   Capa encima de style.css para probar la dirección visual del juego en
+   los temas Noche (antes Oscuro) y Día (antes Claro). Alto contraste y
+   SimulaCiencia no cambian. Si se aprueba, se integra en style.css con
+   variables y se copia a las demás simulaciones.
+════════════════════════════════════════════════════ */
+@font-face {
+    font-family: 'Fredoka';
+    src: url('fonts/fredoka.woff2') format('woff2');
+    font-weight: 300 700;
+    font-display: swap;
+}
+
+body:not(.theme-contrast):not(.theme-marca) {
+    /* Pizarra: azules de SimulaCiencia, oscuro de tono medio para la pizarra digital */
+    --bg1: #0b2236;  --bg2: #154a70;
+    --panel: #15395a; --panel-2: #1d4a72; --hundido: #0e2b45;
+    --line: #2d6996;  --line-suave: #24577f;
+    --text: #eef7ff;  --muted: #b5d3ec; --title: #ffffff;
+    --accent: #00c8ff; --accent-ink: #04263d; --accent-suave: rgba(0,200,255,0.18);
+    --cyan: #00c8ff;
+    --solid: #9ec9ff; --liquid: #34e3a8; --gas: #ffa25a; --change: #ffd84a;
+    --hot: #ff8a6a;   --cold: #8cc8ff;
+    --boton-sombra: #071a2b;
+    --shadow: 0 10px 28px rgba(3, 15, 28, 0.45);
+    --puntos: rgba(255,255,255,0.06);
+    --font-fun: 'Fredoka', 'Trebuchet MS', system-ui, sans-serif;
+}
+body.theme-light:not(.theme-marca) {
+    /* Día: claro pero no blanco, con el azul de la marca */
+    --bg1: #dde9f3;  --bg2: #eef5fb;
+    --panel: #f7fbff; --panel-2: #e4eff8; --hundido: #d3e2ef;
+    --line: #a9c6de;  --line-suave: #c6dbec;
+    --text: #13304a;  --muted: #3f5f7a; --title: #0b2236;
+    --accent: #0369a1; --accent-ink: #ffffff; --accent-suave: rgba(3,105,161,0.14);
+    --cyan: #0369a1;
+    --solid: #1f5fbf; --liquid: #0a7d58; --gas: #c2410c; --change: #b45309;
+    --hot: #c0402a;   --cold: #1a6ab0;
+    --boton-sombra: #a9c6de;
+    --shadow: 0 10px 24px rgba(11, 34, 54, 0.14);
+    --puntos: rgba(11,34,54,0.07);
+}
+
+/* ── Base ─────────────────────────────────────────── */
+body:not(.theme-contrast):not(.theme-marca) {
+    background: radial-gradient(ellipse at 60% 0%, var(--bg2) 0%, var(--bg1) 75%) fixed;
+    color: var(--text);
+    font-size: 14.5px;
+}
+body:not(.theme-contrast):not(.theme-marca) .control-panel {
+    background: transparent;
+    border-right: 0;
+    padding: 18px 16px 18px 20px;
+    gap: 12px;
+}
+body:not(.theme-contrast):not(.theme-marca) .control-panel::-webkit-scrollbar-thumb { background: var(--line); }
+body:not(.theme-contrast):not(.theme-marca) .control-panel::-webkit-scrollbar-track { background: transparent; }
+body:not(.theme-contrast):not(.theme-marca) .simulation-panel {
+    background: transparent;
+}
+body:not(.theme-contrast):not(.theme-marca) .simulation-panel::before {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background-image: radial-gradient(circle, var(--puntos) 1.5px, transparent 1.6px);
+    background-size: 28px 28px;
+}
+
+/* ── Cabecera ─────────────────────────────────────── */
+body:not(.theme-contrast):not(.theme-marca) .header-top h1 {
+    font: 700 1.6rem/1.05 var(--font-fun);
+    color: var(--title);
+    letter-spacing: 0.2px;
+    text-shadow: 0 3px 0 var(--line);
+}
+body:not(.theme-contrast):not(.theme-marca) .header-icon-svg {
+    width: 48px; height: 48px;
+    background: var(--panel); border: 2px solid var(--line); border-radius: 14px; padding: 3px;
+    box-shadow: 0 4px 0 var(--boton-sombra);
+}
+body:not(.theme-contrast):not(.theme-marca) .subtitle {
+    font: 600 0.95rem var(--font-fun);
+    text-transform: none; letter-spacing: 0.3px;
+    color: var(--muted);
+}
+.subtitle .st-s, .subtitle .st-l, .subtitle .st-g { font-weight: 700; }
+body:not(.theme-contrast):not(.theme-marca) .header-details summary {
+    font: 500 0.88rem var(--font-fun); color: var(--muted);
+}
+body:not(.theme-contrast):not(.theme-marca) .header-details summary::before { color: var(--accent); }
+
+/* ── Tarjetas: cada grupo del panel es una pieza redonda ── */
+body:not(.theme-contrast):not(.theme-marca) .divider { display: none; }
+body:not(.theme-contrast):not(.theme-marca) .control-group {
+    background: var(--panel);
+    border: 2px solid var(--line);
+    border-radius: 20px;
+    padding: 14px 16px;
+    box-shadow: var(--shadow);
+}
+body:not(.theme-contrast):not(.theme-marca) h2 {
+    font: 700 1.05rem var(--font-fun);
+    text-transform: none; letter-spacing: 0.2px;
+    color: var(--title);
+    display: flex; align-items: center; gap: 8px;
+}
+body:not(.theme-contrast):not(.theme-marca) h2::before {
+    content: ''; width: 10px; height: 10px; border-radius: 50%;
+    background: var(--muted); opacity: 0.8;
+    flex: none;
+}
+body:not(.theme-contrast):not(.theme-marca) label { color: var(--text); font-size: 0.9rem; }
+body:not(.theme-contrast):not(.theme-marca) .label-hint,
+body:not(.theme-contrast):not(.theme-marca) .field-hint,
+body:not(.theme-contrast):not(.theme-marca) .section-note,
+body:not(.theme-contrast):not(.theme-marca) .slider-bounds { color: var(--muted); }
+body:not(.theme-contrast):not(.theme-marca) .field-hint strong { color: var(--title); }
+
+/* ── Selector de modo: fichas grandes como las del menú del juego ── */
+body:not(.theme-contrast):not(.theme-marca) .mode-switch {
+    background: transparent; border: 0; padding: 0; gap: 10px;
+}
+body:not(.theme-contrast):not(.theme-marca) .mode-btn {
+    background: var(--panel-2);
+    border: 3px solid transparent;
+    border-radius: 18px;
+    padding: 10px 6px 9px;
+    color: var(--title);
+    font: 700 0.98rem var(--font-fun);
+    box-shadow: 0 4px 0 var(--boton-sombra);
+    transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+body:not(.theme-contrast):not(.theme-marca) .mode-btn:hover { transform: translateY(-2px); }
+body:not(.theme-contrast):not(.theme-marca) .mode-btn .mode-sub {
+    font: 500 0.72rem var(--font-fun); text-transform: none; letter-spacing: 0.2px; color: var(--muted);
+}
+body:not(.theme-contrast):not(.theme-marca) .mode-btn.active {
+    background: var(--panel); border-color: var(--accent); color: var(--title);
+}
+body:not(.theme-contrast):not(.theme-marca) .mode-btn.active .mode-sub { color: var(--muted); }
+
+/* ── Campos ───────────────────────────────────────── */
+body:not(.theme-contrast):not(.theme-marca) .custom-select {
+    background-color: var(--panel-2); border: 2px solid var(--line); color: var(--title);
+    border-radius: 999px; padding: 9px 16px;
+    font: 600 0.98rem var(--font-fun);
+}
+body:not(.theme-contrast):not(.theme-marca) .custom-select:hover { border-color: var(--accent); }
+body:not(.theme-contrast):not(.theme-marca) .custom-select option { background: var(--panel); color: var(--text); }
+body:not(.theme-contrast):not(.theme-marca) .value-badge {
+    background: var(--accent); color: var(--accent-ink);
+    border-radius: 999px; padding: 2px 10px;
+    font: 700 0.92rem var(--font-fun);
+}
+body:not(.theme-contrast):not(.theme-marca) input[type="range"] { height: 10px; }
+body:not(.theme-contrast):not(.theme-marca) input[type="range"]::-webkit-slider-thumb {
+    width: 24px; height: 24px; background: var(--accent);
+    border: 3px solid var(--panel); box-shadow: 0 3px 0 var(--boton-sombra);
+}
+body:not(.theme-contrast):not(.theme-marca) input[type="range"]::-moz-range-thumb {
+    width: 20px; height: 20px; background: var(--accent); border: 3px solid var(--panel);
+}
+body:not(.theme-contrast):not(.theme-marca) input[type="range"].power-slider { --track: var(--hundido); }
+body:not(.theme-contrast):not(.theme-marca) .bound-cold { color: var(--cold); }
+body:not(.theme-contrast):not(.theme-marca) .bound-hot  { color: var(--hot); }
+body:not(.theme-contrast):not(.theme-marca) .check-row { font-size: 0.9rem; }
+body:not(.theme-contrast):not(.theme-marca) .check-row input[type="checkbox"] {
+    width: 20px; height: 20px; accent-color: var(--accent);
+}
+
+/* ── Botones de ajustes rápidos (diagrama de fases) ── */
+body:not(.theme-contrast):not(.theme-marca) .preset-btn {
+    background: var(--panel-2); border: 2px solid transparent; color: var(--title);
+    border-radius: 14px; font: 700 0.88rem var(--font-fun);
+    box-shadow: 0 3px 0 var(--boton-sombra);
+}
+body:not(.theme-contrast):not(.theme-marca) .preset-btn small { font: 500 0.72rem var(--font-fun); color: var(--muted); }
+body:not(.theme-contrast):not(.theme-marca) .preset-btn:hover { border-color: var(--line); transform: translateY(-1px); }
+body:not(.theme-contrast):not(.theme-marca) .preset-btn.active { background: var(--panel); border-color: var(--accent); color: var(--title); }
+body:not(.theme-contrast):not(.theme-marca) .at-pressure p { color: var(--text); }
+body:not(.theme-contrast):not(.theme-marca) .at-pressure strong { color: var(--title); font-family: var(--font-fun); }
+
+/* ── Métricas: fichas con número grande ───────────── */
+body:not(.theme-contrast):not(.theme-marca) .custom-details {
+    background: var(--panel); border: 2px solid var(--line); border-radius: 20px;
+    box-shadow: var(--shadow);
+}
+body:not(.theme-contrast):not(.theme-marca) .custom-details summary {
+    font: 700 1.02rem var(--font-fun); text-transform: none; letter-spacing: 0.2px;
+    color: var(--title); padding: 13px 16px;
+}
+body:not(.theme-contrast):not(.theme-marca) .custom-details summary::after { color: var(--accent); }
+body:not(.theme-contrast):not(.theme-marca) .details-content {
+    background: transparent; border-top: 2px dashed var(--line-suave);
+}
+body:not(.theme-contrast):not(.theme-marca) .card,
+body:not(.theme-contrast):not(.theme-marca) .card.card-data {
+    background: var(--panel-2); border: 0; border-radius: 16px;
+    box-shadow: inset 0 -4px 0 rgba(0,0,0,0.12);
+}
+body:not(.theme-contrast):not(.theme-marca) .card.card-estado {
+    background: var(--panel-2); border: 2px solid var(--line); border-left-width: 2px;
+}
+body:not(.theme-contrast):not(.theme-marca) .card h3 {
+    font: 600 0.78rem var(--font-fun); text-transform: none; letter-spacing: 0.2px; color: var(--muted);
+}
+body:not(.theme-contrast):not(.theme-marca) .metric {
+    font: 700 1.55rem/1.05 var(--font-fun); color: var(--title);
+    font-variant-numeric: tabular-nums;
+}
+body:not(.theme-contrast):not(.theme-marca) .metric small { color: var(--muted); font-size: 0.8rem; font-weight: 500; }
+body:not(.theme-contrast):not(.theme-marca) .metric-text { font: 700 1.05rem var(--font-fun); }
+body:not(.theme-contrast):not(.theme-marca) .metric-text.hot  { color: var(--hot); }
+body:not(.theme-contrast):not(.theme-marca) .metric-text.cold { color: var(--cold); }
+body:not(.theme-contrast):not(.theme-marca) .estado-value { font: 700 1.1rem var(--font-fun); }
+body:not(.theme-contrast):not(.theme-marca) .estado-value.st-solid  { color: var(--solid); }
+body:not(.theme-contrast):not(.theme-marca) .estado-value.st-liquid { color: var(--liquid); }
+body:not(.theme-contrast):not(.theme-marca) .estado-value.st-gas    { color: var(--gas); }
+body:not(.theme-contrast):not(.theme-marca) .estado-value.st-change { color: var(--change); }
+body:not(.theme-contrast):not(.theme-marca) .energy-bar { height: 16px; border-radius: 999px; background: var(--hundido); border: 2px solid var(--line); }
+body:not(.theme-contrast):not(.theme-marca) .energy-legend { color: var(--muted); font-size: 0.82rem; }
+body:not(.theme-contrast):not(.theme-marca) .energy-legend b { font-family: var(--font-fun); color: var(--title); }
+body:not(.theme-contrast):not(.theme-marca) .key-ideas { color: var(--text); font-size: 0.86rem; }
+body:not(.theme-contrast):not(.theme-marca) .key-ideas li { border-left: 0; padding-left: 26px; position: relative; }
+body:not(.theme-contrast):not(.theme-marca) .key-ideas li::before {
+    content: '💡'; position: absolute; left: 0; top: 0; font-size: 0.95rem;
+}
+body:not(.theme-contrast):not(.theme-marca) .key-ideas strong { color: var(--title); }
+body:not(.theme-contrast):not(.theme-marca) .formula { font-family: var(--font-fun); border-bottom: 2px dashed var(--line-suave); }
+body:not(.theme-contrast):not(.theme-marca) .formula-name { color: var(--muted); }
+body:not(.theme-contrast):not(.theme-marca) .formula-eq { color: var(--title); }
+body:not(.theme-contrast):not(.theme-marca) .quick-rule span { font-family: var(--font-fun); font-size: 0.82rem; border-radius: 999px; padding: 3px 12px; }
+
+/* ── Barra de botones sobre la simulación: píldoras con relieve ── */
+body:not(.theme-contrast):not(.theme-marca) .dock-label {
+    font: 600 0.9rem var(--font-fun); text-transform: none; letter-spacing: 0.2px; color: var(--muted);
+}
+body:not(.theme-contrast):not(.theme-marca) .dock-seg {
+    background: var(--panel); border: 2px solid var(--line); border-radius: 999px; padding: 4px;
+    box-shadow: 0 4px 0 var(--boton-sombra);
+}
+body:not(.theme-contrast):not(.theme-marca) .dock-seg-btn {
+    color: var(--text); border: 2px solid transparent; border-radius: 999px;
+    font: 600 0.98rem var(--font-fun); min-height: 36px; padding: 4px 14px;
+}
+body:not(.theme-contrast):not(.theme-marca) .dock-seg-btn:hover { background: var(--panel-2); color: var(--title); }
+body:not(.theme-contrast):not(.theme-marca) .dock-seg-btn.active { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+body:not(.theme-contrast):not(.theme-marca) .dock-seg-btn.seg-hot.active  { background: #ff6b6b; border-color: #ff6b6b; color: #3a0000; }
+body:not(.theme-contrast):not(.theme-marca) .dock-seg-btn.seg-cold.active { background: #4aa8ff; border-color: #4aa8ff; color: #00264a; }
+body:not(.theme-contrast):not(.theme-marca) .dock-seg-btn.seg-off.active  { background: var(--panel-2); border-color: var(--line); color: var(--title); }
+body:not(.theme-contrast):not(.theme-marca) .canvas-btn {
+    background: var(--panel); border: 2px solid var(--line); color: var(--title);
+    border-radius: 999px; min-height: 44px; padding: 8px 20px;
+    font: 600 1rem var(--font-fun); letter-spacing: 0.2px;
+    box-shadow: 0 4px 0 var(--boton-sombra);
+    transition: transform 0.12s, box-shadow 0.12s, border-color 0.15s;
+}
+body:not(.theme-contrast):not(.theme-marca) .canvas-btn:hover { transform: translateY(-2px); border-color: var(--accent); background: var(--panel); color: var(--title); }
+body:not(.theme-contrast):not(.theme-marca) .canvas-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--boton-sombra); }
+body:not(.theme-contrast):not(.theme-marca) .canvas-btn.active,
+body:not(.theme-contrast):not(.theme-marca) .canvas-btn[aria-pressed="true"] {
+    background: var(--accent); border-color: var(--accent); color: var(--accent-ink); box-shadow: 0 4px 0 var(--boton-sombra);
+}
+
+/* ── Lienzo: tablero redondeado ───────────────────── */
+/* El marco del tablero lo dibuja el propio lienzo (escala con él y no choca con
+   los tableros internos en el móvil); aquí solo una sombra suave. */
+body:not(.theme-contrast):not(.theme-marca) #canvas-container canvas {
+    border-radius: 0; box-shadow: none;
+}
+body.theme-light:not(.theme-marca) #canvas-container canvas {
+}
+
+/* ── Botón y panel de tema ────────────────────────── */
+body:not(.theme-contrast):not(.theme-marca) .theme-btn {
+    width: 42px; height: 42px; background: var(--panel); border: 2px solid var(--line); color: var(--title);
+    box-shadow: 0 4px 0 var(--boton-sombra);
+}
+body:not(.theme-contrast):not(.theme-marca) .theme-btn:hover,
+body:not(.theme-contrast):not(.theme-marca) .theme-btn.active { border-color: var(--accent); color: var(--accent); background: var(--panel); }
+body:not(.theme-contrast):not(.theme-marca) .theme-panel {
+    background: var(--panel); border: 2px solid var(--line); border-radius: 18px; box-shadow: var(--shadow);
+}
+body:not(.theme-contrast):not(.theme-marca) .theme-panel-title { font: 600 0.78rem var(--font-fun); color: var(--muted); }
+body:not(.theme-contrast):not(.theme-marca) .theme-opt {
+    border: 2px solid transparent; border-radius: 12px; color: var(--text);
+    font: 600 0.92rem var(--font-fun); min-height: 38px;
+}
+body:not(.theme-contrast):not(.theme-marca) .theme-opt:hover { background: var(--panel-2); border-color: var(--line); color: var(--title); }
+body:not(.theme-contrast):not(.theme-marca) .theme-opt.active { background: transparent; border-color: var(--accent); color: var(--title); }
+.dark-swatch  { background: linear-gradient(135deg, #154a70 50%, #00c8ff 50%) !important; border: 0 !important; }
+.light-swatch { background: linear-gradient(135deg, #eef5fb 50%, #0369a1 50%) !important; border: 1px solid #a9c6de !important; }
+
+/* Foco visible del color de acento */
+body:not(.theme-contrast):not(.theme-marca) button:focus-visible,
+body:not(.theme-contrast):not(.theme-marca) select:focus-visible,
+body:not(.theme-contrast):not(.theme-marca) input:focus-visible,
+body:not(.theme-contrast):not(.theme-marca) summary:focus-visible {
+    outline: 3px solid var(--accent); outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body:not(.theme-contrast):not(.theme-marca) * { transition: none !important; }
+}
+
+/* Deslizadores normales: relleno del color de acento */
+body:not(.theme-contrast):not(.theme-marca) input[type="range"]:not(.power-slider) {
+    background: linear-gradient(to right, var(--accent) 0%, var(--accent) var(--fill, 40%), var(--hundido) var(--fill, 40%));
+    box-shadow: inset 0 0 0 2px var(--line-suave);
+}
+
+/* ── Pequeñas animaciones ─────────────────────────── */
+@keyframes bump { 0% { transform: scale(1); } 40% { transform: scale(1.35); } 100% { transform: scale(1); } }
+body:not(.theme-contrast):not(.theme-marca) .estado-value.bump { animation: bump 0.5s ease; }
+body:not(.theme-contrast):not(.theme-marca) .mode-btn:active,
+body:not(.theme-contrast):not(.theme-marca) .preset-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--boton-sombra); }
+body:not(.theme-contrast):not(.theme-marca) .dock-seg-btn:active { transform: scale(0.94); }
+body:not(.theme-contrast):not(.theme-marca) .dock-seg-btn { transition: transform 0.1s, background 0.15s; }
+@keyframes aparece { from { transform: translateY(10px); opacity: 0; } to { transform: none; opacity: 1; } }
+body:not(.theme-contrast):not(.theme-marca) .control-group,
+body:not(.theme-contrast):not(.theme-marca) .custom-details { animation: aparece 0.4s ease both; }
+@media (prefers-reduced-motion: reduce) {
+    body:not(.theme-contrast):not(.theme-marca) .estado-value.bump,
+    body:not(.theme-contrast):not(.theme-marca) .control-group,
+    body:not(.theme-contrast):not(.theme-marca) .custom-details { animation: none; }
+}
